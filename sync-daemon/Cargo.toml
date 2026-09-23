@@ -23,7 +23,7 @@ sha2 = "0.10"
 anyhow = "1"
 # Filesystem watcher (FSEvents on macOS, inotify on Linux): syncs almost immediately instead of
 # waiting for the polling interval.
-notify = "6"
+notify = "8"
 
 [profile.release]
 strip = true

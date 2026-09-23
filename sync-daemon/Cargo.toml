@@ -19,7 +19,7 @@ serde_json = "1"
 # Local index: bundled SQLite -- does not require a system SQLite.
 rusqlite = { version = "0.31", features = ["bundled"] }
 # Content hash: SHA-256, the SAME algorithm the server uses (ETag), to detect local changes.
-sha2 = "0.10"
+sha2 = "0.11"
 anyhow = "1"
 # Filesystem watcher (FSEvents on macOS, inotify on Linux): syncs almost immediately instead of
 # waiting for the polling interval.

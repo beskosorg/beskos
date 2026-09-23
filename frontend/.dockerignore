@@ -1,0 +1,21 @@
+# Keep the developer's machine out of the image.
+#
+# The Dockerfile does `COPY . .`, and Vite reads .env.local in EVERY mode, production included. A
+# `.env.local` holding VITE_PUBLIC_BASE=http://localhost:5173 -- which is exactly what the local dev
+# server needs -- was reaching the build and baking that address into the production bundle. Every
+# shareable link the app produced (task link, file share, meeting invite) pointed at a laptop.
+#
+# Git does not protect against this: .env.local is gitignored, but the deploy tars the working
+# directory, not the git tree. So the exclusion has to live here as well.
+.env
+.env.local
+.env.*.local
+.env.tauri
+.env.development
+.env.production
+
+node_modules
+dist
+src-tauri/target
+tsconfig.tsbuildinfo
+.turbo

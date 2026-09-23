@@ -1,0 +1,137 @@
+# One machine, serving the whole product on real domains.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.host.yml up -d
+#
+# The base file stops at the application: it publishes the API on 127.0.0.1 and leaves TLS, the
+# built web client, and routing between hostnames to whatever runs in front. This file is that
+# front, for the common case where there is no orchestrator -- one host, one `docker compose up`.
+# It adds the web client, the public site, Caddy, and the backup service.
+#
+# It is also what runs beskos.com, which is why the hostnames in Caddyfile.host are concrete
+# rather than a template. Change them there and nothing else here needs touching.
+#
+# Object storage: the base file defaults to the MinIO container, and reads MINIO_ENDPOINT and its
+# companions from the environment when an installation already has an S3-compatible service. The
+# minio container still starts either way -- the base file depends on it -- and simply goes unused.
+
+services:
+  # Docker gives the container a random hostname, and that is what Stalwart puts in its SMTP
+  # greeting -- a receiving server sees `685ed90c22b2` where it expects the MX name.
+  stalwart:
+    hostname: mail.beskos.com
+
+  # Webmail and panel: the built SPA, with nginx forwarding /api, /jmap, /auth and /.well-known to
+  # the Go API on the same origin. No published port -- Caddy is what the internet talks to.
+  app:
+    build: ../frontend
+    container_name: beskos-app
+    restart: unless-stopped
+    environment:
+      API_UPSTREAM: "api:8000"
+    depends_on:
+      - api
+
+  # The public site. An installation that is not beskos.com drops this service and points the root
+  # domain at `app` in Caddyfile.host.
+  landing:
+    build: ../landing
+    container_name: beskos-landing
+    restart: unless-stopped
+
+  # TLS and routing. Certificates are obtained over ports 80 and 443, so the DNS for every name in
+  # Caddyfile.host has to point here before this container is started.
+  caddy:
+    image: caddy:2-alpine
+    container_name: beskos-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile.host:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+      - landing
+
+  # Stalwart writes messages and attachments STRAIGHT to object storage with S3 credentials,
+  # bypassing our code entirely, and its S3 client has no encryption option of any kind. This
+  # gateway speaks S3 back to it and encrypts on the way through (backend/cmd/blobgw). Stalwart's
+  # registry points its blob endpoint here; without it, message bodies cannot be read or written and
+  # the webmail lists mail it cannot open.
+  #
+  # The `srv-captain--blobgw` alias is the name the registry still holds from the CapRover cluster.
+  # It costs nothing to answer to it, and the alternative is an instance that breaks the moment the
+  # registry is restored from a backup taken before the name was changed.
+  blobgw:
+    build: ../backend
+    container_name: beskos-blobgw
+    restart: unless-stopped
+    command: ["/usr/local/bin/blobgw"]
+    networks:
+      default:
+        aliases:
+          - srv-captain--blobgw
+    environment:
+      BLOBGW_S3_ENDPOINT: "${BLOBGW_S3_ENDPOINT}"
+      BLOBGW_S3_ACCESS_KEY: "${BLOBGW_S3_ACCESS_KEY}"
+      BLOBGW_S3_SECRET_KEY: "${BLOBGW_S3_SECRET_KEY}"
+      BLOBGW_S3_BUCKET: "${BLOBGW_S3_BUCKET}"
+      BLOBGW_S3_REGION: "${BLOBGW_S3_REGION}"
+      BLOBGW_S3_SSL: "${BLOBGW_S3_SSL:-true}"
+      BLOBGW_ACCESS_KEY: "${BLOBGW_ACCESS_KEY}"
+      BLOBGW_SECRET_KEY: "${BLOBGW_SECRET_KEY}"
+      BLOBGW_REGION: "${BLOBGW_REGION:-auto}"
+      BLOBGW_PREFIXES: "${BLOBGW_PREFIXES:-mail/}"
+      FILE_ENC_KEYS: "${FILE_ENC_KEYS}"
+
+  # Stalwart cannot renew its own certificate here -- Caddy owns ports 80 and 443 -- and an
+  # expired one stops inbound mail outright under an MTA-STS policy at `enforce`. This carries
+  # Caddy's across. It reads the certificate volume, and nothing writes to it.
+  mailcert:
+    build: ./mailcert
+    container_name: beskos-mailcert
+    restart: unless-stopped
+    depends_on:
+      - caddy
+      - stalwart
+    environment:
+      STALWART_URL: "http://stalwart:8080"
+      STALWART_ADMIN_ID: "admin"
+      STALWART_ADMIN_SECRET: "${STALWART_ADMIN_SECRET}"
+      CERT_DOMAIN: "${STALWART_HOSTNAME}"
+      # caddy_data is Caddy's /data; its certificates live one level in, under the issuer's name.
+      CERT_DIR: "/caddy-data/caddy/certificates"
+    volumes:
+      - caddy_data:/caddy-data:ro
+
+  # Three copies a day, encrypted, off this machine. Running it beside the database is the point:
+  # a backup service that lives somewhere else is one more thing that can quietly stop.
+  backup:
+    build: ./backup
+    container_name: beskos-backup
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable"
+      BACKUP_DATABASES: "${POSTGRES_DB} stalwart"
+      BACKUP_PROVIDER: "${BACKUP_PROVIDER:-Other}"
+      BACKUP_ENDPOINT: "${BACKUP_ENDPOINT}"
+      BACKUP_ACCESS_KEY: "${BACKUP_ACCESS_KEY}"
+      BACKUP_SECRET_KEY: "${BACKUP_SECRET_KEY}"
+      BACKUP_BUCKET: "${BACKUP_BUCKET}"
+      BACKUP_REGION: "${BACKUP_REGION:-auto}"
+      BACKUP_AGE_RECIPIENT: "${BACKUP_AGE_RECIPIENT}"
+      BLOB_ENDPOINT: "${BLOB_ENDPOINT:-}"
+      BLOB_ACCESS_KEY: "${BLOB_ACCESS_KEY:-}"
+      BLOB_SECRET_KEY: "${BLOB_SECRET_KEY:-}"
+      BLOB_BUCKET: "${BLOB_BUCKET:-}"
+      BLOB_PREFIX: "${BLOB_PREFIX:-mail}"
+
+volumes:
+  caddy_data:
+  caddy_config:

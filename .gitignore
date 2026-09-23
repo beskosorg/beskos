@@ -1,0 +1,23 @@
+# Secrets -- never commit (brief §10)
+deploy/.env
+*.env
+!*.env.example
+
+# Go
+/backend/bin/
+*.test
+
+# Node
+node_modules/
+frontend/dist/
+
+# OS
+.DS_Store
+*.env.bak*
+
+# Python bytecode from scripts/
+__pycache__/
+
+# Build caches
+*.tsbuildinfo
+dist/

@@ -1,0 +1,114 @@
+/* Calendar layout inspired by the SyncWise reference (cards with a soft category background,
+   avatar stack, "now" line, next-event pill), but with the house CHROME -- same design as the
+   Contacts page: light sidebar with rlabel/grp-item/newg, the theme's colors and borders, accent
+   = brand color. */
+
+.wm .calsw{height:100%;display:flex;position:relative;}
+
+/* -- Sidebar (same as Contacts') -- */
+.wm .csw-side{width:224px;flex:none;border-inline-end:1px solid var(--border);background:var(--surface);padding:14px 12px;overflow-y:auto;}
+.wm .csw-side .grp-item.dim .gn,.wm .csw-side .grp-item.dim .dot{opacity:.38;}
+/* the "newg" style in webmail.css is scoped to .cts-side -- replicated here for our own sidebar */
+.wm .csw-side .newg{width:100%;border:1px dashed var(--border-strong);background:none;color:var(--muted);border-radius:10px;padding:8px;font-size:12.5px;font-weight:600;margin-top:10px;cursor:pointer;}
+.wm .csw-side .newg:hover{border-color:var(--accent);color:var(--accent-ink);}
+.wm .csw-side .grp-item .dot{width:9px;height:9px;border-radius:50%;flex:none;}
+.wm .csw-fbpick{position:relative;}
+.wm .csw-fbpick .invp-sugg{inset-inline-start:0;inset-inline-end:0;}
+.wm .csw-fbchip{max-width:100%;}
+.wm .csw-fbchip .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+/* ── Main panel ── */
+.wm .calsw-main{flex:1;min-width:0;display:flex;flex-direction:column;position:relative;background:var(--surface);}
+.wm .csw-top{display:flex;align-items:center;gap:8px;padding:16px 20px 10px;flex-wrap:wrap;}
+.wm .csw-title{display:flex;align-items:center;gap:6px;}
+.wm .csw-title h2{margin:0 8px 0 0;font-size:20px;font-weight:700;letter-spacing:-.02em;text-transform:capitalize;}
+.wm .csw-nav{border:none;background:none;color:var(--muted);font-size:17px;cursor:pointer;width:28px;height:28px;border-radius:50%;}
+.wm .csw-nav:hover{background:var(--surface-2);color:var(--ink);}
+.wm .csw-today{border:1px solid var(--border);background:none;color:var(--muted);font-size:12px;font-weight:600;border-radius:999px;padding:5px 12px;cursor:pointer;}
+.wm .csw-today:hover{border-color:var(--border-strong);color:var(--ink);}
+.wm .csw-views{display:flex;gap:2px;background:var(--surface-2);border-radius:999px;padding:4px;margin-inline-start:8px;}
+.wm .csw-views button{border:none;background:none;color:var(--muted);font-size:12.5px;font-weight:600;padding:7px 15px;border-radius:999px;cursor:pointer;}
+.wm .csw-views button.on{background:var(--ink);color:var(--surface);}
+.wm .csw-ib{border:none;background:none;color:var(--muted);width:32px;height:32px;border-radius:50%;display:grid;place-items:center;cursor:pointer;}
+.wm .csw-ib:hover{background:var(--surface-2);color:var(--ink);}
+.wm .csw-q{border:1px solid var(--border);border-radius:999px;padding:7px 13px;font-size:12.5px;background:var(--surface);color:var(--ink);width:180px;}
+.wm .csw-q:focus{border-color:var(--accent);outline:none;}
+.wm .csw-add{display:inline-flex;align-items:center;gap:7px;border:none;background:var(--accent);color:#fff;font-size:13px;font-weight:650;border-radius:999px;padding:9px 16px;cursor:pointer;}
+.wm .csw-add:hover{filter:brightness(1.07);}
+.wm .csw-gmt{font-size:10.5px;font-weight:600;color:var(--muted);border:1px solid var(--border);border-radius:8px;padding:3px 7px;}
+
+/* -- Event cards: soft category-color background, subtle border, theme text -- */
+.wm .csw-ev{border:1px solid color-mix(in srgb,var(--evc,var(--accent)) 30%,transparent);background:color-mix(in srgb,var(--evc,var(--accent)) 16%,var(--surface));color:var(--ink);text-align:start;cursor:pointer;border-radius:12px;overflow:hidden;}
+.wm .csw-ev .csw-ev-t{display:flex;align-items:center;gap:5px;font-size:12.5px;font-weight:650;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}
+.wm .csw-ev .csw-ev-t svg{flex:none;opacity:.75;}
+.wm .csw-ev .csw-ev-t .rec{font-style:normal;opacity:.55;font-size:11px;}
+.wm .csw-ev .tm{font-size:10.5px;font-weight:550;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.wm .csw-ev.past{opacity:.55;}
+.wm .csw-ev.invited{border-style:dashed;border-color:color-mix(in srgb,var(--evc,var(--accent)) 60%,transparent);}
+/* week/day: absolute block in the column */
+.wm .csw-ev.block{position:absolute;inset-inline-start:5px;inset-inline-end:7px;z-index:1;display:flex;flex-direction:column;gap:2px;padding:8px 10px;}
+.wm .csw-ev.block.draggable{cursor:grab;}
+.wm .csw-ev.block.dragging{cursor:grabbing;z-index:6;box-shadow:0 12px 28px rgba(20,17,24,.22);}
+.wm .csw-ev-foot{margin-top:auto;display:flex;}
+/* month view: compact card in flow */
+.wm .csw-ev.sm{display:flex;flex-direction:column;gap:3px;padding:6px 9px;border-radius:10px;width:100%;}
+.wm .csw-ev-b{display:flex;align-items:center;justify-content:space-between;gap:6px;min-width:0;}
+.wm .csw-ev.sm.allday{background:var(--evc,var(--accent));border-color:transparent;}
+.wm .csw-ev.sm.allday .csw-ev-t{color:#fff;}
+.wm .csw-ev.sm.busy{background:transparent;border:1.5px dashed currentColor;padding:4px 8px;font-size:10.5px;font-weight:650;border-radius:9px;}
+/* list: horizontal row */
+.wm .csw-ev.row{display:flex;align-items:center;gap:12px;padding:10px 13px;border-radius:12px;width:100%;}
+.wm .csw-ev.row .csw-ev-t{flex:none;max-width:40%;}
+.wm .csw-ev.row .tm{flex:1;}
+
+/* avatar stack */
+.wm .csw-avs{display:flex;align-items:center;flex:none;}
+.wm .csw-avs img,.wm .csw-avs i{width:20px;height:20px;border-radius:50%;object-fit:cover;border:1.5px solid var(--surface);margin-inline-start:-7px;flex:none;}
+.wm .csw-avs i{font-style:normal;font-size:9.5px;font-weight:650;color:#fff;display:grid;place-items:center;}
+.wm .csw-avs img:first-child,.wm .csw-avs i:first-child{margin-inline-start:0;}
+.wm .csw-avs em{font-style:normal;height:20px;min-width:20px;padding:0 4px;border-radius:999px;margin-inline-start:-7px;background:var(--ink);color:var(--surface);font-size:9.5px;font-weight:650;display:grid;place-items:center;border:1.5px solid var(--surface);}
+
+/* ── Week/day grid ── */
+.wm .calsw .ct-hr{height:88px;}
+.wm .calsw .ct-corner{display:grid;place-items:center;padding:8px 4px;}
+.wm .calsw .ct-dayh{display:flex;flex-direction:column;align-items:center;gap:1px;padding:9px 6px;}
+.wm .calsw .ct-dayh b{font-size:17px;font-weight:700;text-transform:none;letter-spacing:0;color:var(--ink);}
+.wm .calsw .ct-dayh span{font-size:11px;font-weight:550;color:var(--muted);}
+.wm .calsw .ct-dayh.today{background:var(--accent-tint);box-shadow:inset 0 -2.5px 0 var(--accent);}
+.wm .calsw .ct-dayh.today b{color:var(--accent-ink);}
+.wm .calsw .ct-col.today{background:color-mix(in srgb,var(--accent) 3%,transparent);}
+.wm .calsw .ct-cell{border-bottom:1px solid color-mix(in srgb,var(--border) 60%,transparent);}
+
+/* "now" line */
+.wm .csw-now{position:absolute;inset-inline-start:0;inset-inline-end:0;height:2px;background:var(--accent);z-index:3;pointer-events:none;}
+.wm .csw-now i{position:absolute;inset-inline-start:-4px;top:-3px;width:8px;height:8px;border-radius:50%;background:var(--accent);}
+
+/* all-day strip */
+.wm .calsw .cta-ev{border:1px solid color-mix(in srgb,var(--evc,var(--accent)) 30%,transparent);border-inline-start:none;background:color-mix(in srgb,var(--evc,var(--accent)) 16%,var(--surface));color:var(--ink);border-radius:8px;padding:3px 8px;font-weight:650;}
+
+/* next event (floating, week/day view) */
+.wm .csw-upnext{position:absolute;bottom:16px;left:50%;transform:translateX(-50%);z-index:7;display:flex;align-items:center;gap:11px;border:1px solid var(--border);background:var(--paper);border-radius:16px;padding:9px 14px;cursor:pointer;box-shadow:0 14px 34px rgba(20,17,24,.14);max-width:min(420px,80%);}
+.wm .csw-upnext .ic{width:34px;height:34px;flex:none;border-radius:50%;background:#2D8CFF;color:#fff;display:grid;place-items:center;}
+.wm .csw-upnext .tx{min-width:0;text-align:start;}
+.wm .csw-upnext .tx b{display:block;font-size:13px;font-weight:650;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.wm .csw-upnext .tx i{display:block;font-style:normal;font-size:11px;color:var(--muted);}
+
+@media (max-width:980px){
+  .wm .csw-side{display:none;}
+}
+
+/* event coming from a public BOOKING: highlighted -- strong colored border + tag */
+.wm .csw-ev.bkd{border-width:2px;border-style:solid;border-color:var(--evc,var(--accent));}
+.wm .csw-ev .bkd-tag{font-style:normal;flex:none;font-size:9px;font-weight:750;letter-spacing:.04em;text-transform:uppercase;background:var(--evc,var(--accent));color:#fff;border-radius:6px;padding:2px 6px;}
+
+/* absences (day off / vacation): striped banner, distinct from a normal event */
+.wm .csw-ev.koff{background:repeating-linear-gradient(45deg,color-mix(in srgb,var(--evc,#9AA0A6) 30%,var(--surface)),color-mix(in srgb,var(--evc,#9AA0A6) 30%,var(--surface)) 8px,color-mix(in srgb,var(--evc,#9AA0A6) 16%,var(--surface)) 8px,color-mix(in srgb,var(--evc,#9AA0A6) 16%,var(--surface)) 16px);border-color:color-mix(in srgb,var(--evc,#9AA0A6) 45%,transparent);}
+.wm .csw-ev.sm.allday.koff .csw-ev-t{color:var(--ink);}
+
+/* days outside working hours (Settings -> Calendar): disabled for creating events */
+.wm .calsw .ct-col.offwork{background:repeating-linear-gradient(45deg,transparent,transparent 9px,color-mix(in srgb,var(--border) 45%,transparent) 9px,color-mix(in srgb,var(--border) 45%,transparent) 10px);}
+.wm .calsw .ct-col.offwork .ct-cell{cursor:default;}
+.wm .calsw .ct-col.offwork .ct-cell:hover{background:transparent;}
+.wm .calsw .ct-dayh.offwork b,.wm .calsw .ct-dayh.offwork span{opacity:.4;}
+.wm .calsw .cm-cell.offwork{background:repeating-linear-gradient(45deg,transparent,transparent 9px,color-mix(in srgb,var(--border) 40%,transparent) 9px,color-mix(in srgb,var(--border) 40%,transparent) 10px);cursor:default;}
+.wm .calsw .cm-cell.offwork .cm-day{opacity:.4;}

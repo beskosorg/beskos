@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Extra Info.plist keys merged by Tauri into the macOS bundle. The usage descriptions are
+     REQUIRED for WKWebView to request camera/microphone (getUserMedia) in Meet -- without them macOS
+     silently denies access and the room opens with no video/audio. -->
+<plist version="1.0">
+<dict>
+  <key>NSCameraUsageDescription</key>
+  <string>O Beskos usa a câmara nas videochamadas do Meet.</string>
+  <key>NSMicrophoneUsageDescription</key>
+  <string>O Beskos usa o microfone nas videochamadas do Meet.</string>
+  <!-- App Transport Security: WKWebView blocks cleartext HTTP by default, and the app runs in a
+       secure context (tauri://localhost). In DEV the backend is at http://localhost:8000, so
+       without this exception requests fail silently ("Server unavailable"). The exception is
+       RESTRICTED to localhost -- in production the backend is HTTPS and none of this applies. -->
+  <key>NSAppTransportSecurity</key>
+  <dict>
+    <key>NSAllowsLocalNetworking</key>
+    <true/>
+    <key>NSExceptionDomains</key>
+    <dict>
+      <key>localhost</key>
+      <dict>
+        <key>NSExceptionAllowsInsecureHTTPLoads</key>
+        <true/>
+        <key>NSIncludesSubdomains</key>
+        <true/>
+      </dict>
+    </dict>
+  </dict>
+</dict>
+</plist>

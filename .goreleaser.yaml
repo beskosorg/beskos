@@ -1,0 +1,102 @@
+# Builds the backend's binaries for a tagged release. Run locally with `goreleaser release
+# --snapshot --clean` to try it without publishing. Container images, cosign signing, and an SBOM
+# are follow-up work (docs/OPEN-SOURCE.md) -- they need registry credentials this repository
+# does not have configured yet.
+version: 2
+
+project_name: beskos
+
+before:
+  hooks:
+    - sh -c "cd backend && go mod tidy"
+
+builds:
+  # Every binary below carries -tags pro: docs/OPEN-SOURCE.md's decided shape is ONE published
+  # binary for both editions -- Community is the same binary with no license key configured, not
+  # a separately-built artifact. Building without the tag would mean the ee package's real Pro
+  # logic never links into any released binary at all, so a paying customer's license key would
+  # have nothing to unlock no matter what they configure.
+  #
+  # ldflags stamp internal/version so a running instance can report what it actually is (GET
+  # /api/edition, and each binary's own startup log) -- without this there was no way to tell a
+  # release binary's version apart from any other build of the same commit.
+  - id: api
+    dir: backend
+    main: ./cmd/api
+    binary: beskos-api
+    env: [CGO_ENABLED=0]
+    goos: [linux, darwin]
+    goarch: [amd64, arm64]
+    tags: [pro]
+    ldflags:
+      - -s -w
+      - -X github.com/beskosorg/beskos/backend/internal/version.Version={{.Version}}
+      - -X github.com/beskosorg/beskos/backend/internal/version.Commit={{.ShortCommit}}
+      - -X github.com/beskosorg/beskos/backend/internal/version.Date={{.Date}}
+  - id: worker
+    dir: backend
+    main: ./cmd/worker
+    binary: beskos-worker
+    env: [CGO_ENABLED=0]
+    goos: [linux, darwin]
+    goarch: [amd64, arm64]
+    tags: [pro]
+    ldflags:
+      - -s -w
+      - -X github.com/beskosorg/beskos/backend/internal/version.Version={{.Version}}
+      - -X github.com/beskosorg/beskos/backend/internal/version.Commit={{.ShortCommit}}
+      - -X github.com/beskosorg/beskos/backend/internal/version.Date={{.Date}}
+  - id: bootstrap
+    dir: backend
+    main: ./cmd/bootstrap
+    binary: beskos-bootstrap
+    env: [CGO_ENABLED=0]
+    goos: [linux, darwin]
+    goarch: [amd64, arm64]
+    tags: [pro]
+    ldflags:
+      - -s -w
+      - -X github.com/beskosorg/beskos/backend/internal/version.Version={{.Version}}
+      - -X github.com/beskosorg/beskos/backend/internal/version.Commit={{.ShortCommit}}
+      - -X github.com/beskosorg/beskos/backend/internal/version.Date={{.Date}}
+  - id: bootstrap-owner
+    dir: backend
+    main: ./cmd/bootstrap-owner
+    binary: beskos-bootstrap-owner
+    env: [CGO_ENABLED=0]
+    goos: [linux, darwin]
+    goarch: [amd64, arm64]
+    tags: [pro]
+    ldflags:
+      - -s -w
+      - -X github.com/beskosorg/beskos/backend/internal/version.Version={{.Version}}
+      - -X github.com/beskosorg/beskos/backend/internal/version.Commit={{.ShortCommit}}
+      - -X github.com/beskosorg/beskos/backend/internal/version.Date={{.Date}}
+
+archives:
+  - id: default
+    formats: [tar.gz]
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+    # Every binary here is built with -tags pro (see the comment on `builds` above), so the
+    # archive carries both the BUSL core license and the Enterprise terms that govern the ee
+    # package actually compiled into it, plus the trademark notice -- not just the code license.
+    files:
+      - LICENSE.md
+      - ee/LICENSE
+      - TRADEMARK.md
+
+checksum:
+  name_template: checksums.txt
+
+changelog:
+  use: github
+  sort: asc
+  filters:
+    exclude: ["^docs:", "^test:", "^ci:"]
+
+release:
+  github:
+    owner: beskosorg
+    name: beskos
+  draft: true   # review before publishing -- a release is hard to take back once notified

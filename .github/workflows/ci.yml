@@ -1,0 +1,155 @@
+name: CI
+
+# Merge condition (laws §2.1): clean gofmt + go vet, build and tests passing on the backend;
+# TypeScript strict compiling and tests passing on the frontend. The Tauri (desktop) bundle is
+# checked with cargo check in a separate job so it does not block the essentials.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  secrets:
+    name: Secret scanning (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25.13"
+      - run: go install github.com/zricethezav/gitleaks/v8@v8.24.3
+      - run: $(go env GOPATH)/bin/gitleaks git --redact --no-banner --config .gitleaks.toml .
+  backend:
+    name: Backend (Go)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25.13"
+          cache-dependency-path: backend/go.sum
+      - name: gofmt (no unformatted files)
+        run: |
+          unformatted="$(gofmt -l .)"
+          if [ -n "$unformatted" ]; then
+            echo "Unformatted files (run gofmt -w):"; echo "$unformatted"; exit 1
+          fi
+      - name: go vet
+        run: go vet ./...
+      - name: go build
+        run: go build ./...
+      - name: go test
+        run: go test ./...
+      - name: go build (pro edition)
+        run: go build -tags pro ./...
+      - name: go test (pro edition)
+        run: go test -tags pro ./...
+      - name: govulncheck
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          "$(go env GOPATH)/bin/govulncheck" ./...
+      # golangci-lint (.golangci.yml): govet/ineffassign/staticcheck/unused block the merge;
+      # errcheck is report-only below, since a deferred Close()/Remove() has nothing actionable
+      # to do with its error (see .golangci.yml for why).
+      - name: golangci-lint
+        run: |
+          go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.12.2
+          "$(go env GOPATH)/bin/golangci-lint" run --disable errcheck ./...
+      - name: golangci-lint (errcheck, report-only)
+        continue-on-error: true
+        run: "$(go env GOPATH)/bin/golangci-lint run --enable-only errcheck ./..."
+      - name: gosec (report-only)
+        continue-on-error: true
+        run: |
+          go install github.com/securego/gosec/v2/cmd/gosec@latest
+          "$(go env GOPATH)/bin/gosec" -exclude-dir internal/db ./...
+      - name: sqlc -- generated code is up to date
+        run: |
+          go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.27.0
+          "$(go env GOPATH)/bin/sqlc" generate
+          if ! git diff --exit-code -- internal/db; then
+            echo "internal/db is out of date: run 'sqlc generate' and commit."; exit 1
+          fi
+
+  frontend:
+    name: Frontend (TypeScript)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      # --legacy-peer-deps: same flag the Makefile's `make deps` uses (unresolved peer
+      # ranges among the editor/media libraries make a plain `npm ci` fail outright).
+      - run: npm ci --legacy-peer-deps
+      - name: Build (tsc strict + vite)
+        run: npm run build
+      - name: Tests (vitest)
+        run: npm test
+      - name: npm audit (critical)
+        run: npm audit --audit-level=critical
+      - name: npm audit (high, report-only)
+        continue-on-error: true
+        run: npm audit --audit-level=high
+
+  sync-daemon:
+    name: Sync daemon (Rust)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: sync-daemon
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - name: cargo fmt --check
+        run: cargo fmt --all --check
+      - name: cargo build
+        run: cargo build --locked
+      - name: cargo test
+        run: cargo test --locked
+      - uses: taiki-e/install-action@cargo-audit
+      - name: cargo audit
+        run: cargo audit
+
+  desktop:
+    name: Desktop (Tauri / cargo check)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend/src-tauri
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      # Tauri 2's system dependencies on Linux (webkit2gtk 4.1 + window libs).
+      - name: System dependencies (Tauri)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev librsvg2-dev \
+            libayatana-appindicator3-dev libsoup-3.0-dev build-essential curl wget file
+      - name: cargo fmt --check
+        run: cargo fmt --all --check
+      - name: cargo check
+        run: cargo check --locked
+      - uses: taiki-e/install-action@cargo-audit
+      - name: cargo audit
+        run: cargo audit

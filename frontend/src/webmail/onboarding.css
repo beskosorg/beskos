@@ -1,0 +1,55 @@
+/* First access: single card, centered, on top of the app. Same visual language as registration —
+   whoever just signed up recognizes the screen. */
+.ob {
+  position: fixed; inset: 0; z-index: 200;
+  display: flex; align-items: center; justify-content: center; padding: 24px;
+  background: var(--paper, #FAFAFA);
+  overflow-y: auto;
+}
+.ob-card {
+  width: min(440px, 100%); background: var(--paper); border: 1px solid var(--border);
+  border-radius: 18px; padding: 26px; display: flex; flex-direction: column; gap: 13px;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, .10);
+}
+.ob-head { display: flex; align-items: center; gap: 14px; margin-bottom: 4px; }
+.ob-head img { width: 28px; height: 28px; }
+.ob-dots { display: flex; gap: 5px; flex: 1; }
+.ob-dots i { flex: 1; height: 3px; border-radius: 3px; background: var(--border); }
+.ob-dots i.done { background: color-mix(in srgb, var(--accent-solid) 45%, transparent); }
+.ob-dots i.on { background: var(--accent-solid); }
+
+.ob-card h1 { margin: 0; font-size: 22px; line-height: 1.25; letter-spacing: -.025em; }
+.ob-sub { margin: -6px 0 4px; color: var(--muted); font-size: 14px; }
+.ob-fld { display: flex; flex-direction: column; gap: 6px; }
+.ob-fld > span { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: var(--ink); }
+.ob-fld input {
+  height: 44px; padding: 0 13px; border: 1px solid var(--border-strong); border-radius: 11px;
+  background: var(--paper); color: var(--ink); font: inherit; font-size: 15px; outline: none;
+}
+.ob-fld input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-tint); }
+
+/* Branding: preview with the chosen color behind the logo — you see the result, not form fields. */
+.ob-logo { display: flex; align-items: center; gap: 14px; }
+.ob-prev { display: inline-flex; align-items: center; justify-content: center; width: 58px; height: 58px; border-radius: 15px; color: #fff; overflow: hidden; flex: none; }
+.ob-prev img { width: 100%; height: 100%; object-fit: contain; padding: 8px; background: #fff; }
+.ob-upload { display: inline-flex; align-items: center; height: 38px; padding: 0 15px; border: 1px solid var(--border-strong); border-radius: 10px; font-size: 13.5px; font-weight: 600; cursor: pointer; }
+.ob-upload:hover { background: var(--surface-2); }
+.ob-link { background: none; border: none; color: var(--muted); font: inherit; font-size: 13px; text-decoration: underline; cursor: pointer; }
+.ob-colors { display: flex; flex-wrap: wrap; gap: 9px; }
+.ob-color { width: 34px; height: 34px; border-radius: 50%; border: 2px solid transparent; display: inline-flex; align-items: center; justify-content: center; color: #fff; cursor: pointer; }
+.ob-color.on { border-color: var(--ink); }
+
+.ob-invite { display: flex; gap: 8px; }
+.ob-invite input { flex: 1; height: 44px; padding: 0 13px; border: 1px solid var(--border-strong); border-radius: 11px; background: var(--paper); color: var(--ink); font: inherit; font-size: 15px; outline: none; }
+.ob-invite input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-tint); }
+.ob-invite button { width: 44px; border: 1px solid var(--border-strong); border-radius: 11px; background: var(--surface-2); color: var(--ink); cursor: pointer; }
+.ob-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.ob-list li { display: flex; align-items: center; gap: 8px; padding: 9px 12px; background: var(--surface-2); border-radius: 10px; font-size: 13.5px; }
+.ob-list li button { margin-inline-start: auto; background: none; border: none; color: var(--muted); cursor: pointer; display: inline-flex; }
+
+.ob-err { margin: 0; color: var(--danger, #B4342B); font-size: 13.5px; }
+.ob-cta { display: inline-flex; align-items: center; justify-content: center; height: 46px; margin-top: 4px; background: var(--accent-solid); color: #fff; border: none; border-radius: 12px; font: inherit; font-weight: 650; font-size: 15px; cursor: pointer; }
+.ob-cta:hover { filter: brightness(1.07); }
+.ob-cta:disabled { opacity: .55; cursor: default; filter: none; }
+.ob-skip { background: none; border: none; color: var(--muted); font: inherit; font-size: 13.5px; font-weight: 600; cursor: pointer; padding: 4px; }
+.ob-skip:hover { color: var(--ink); }

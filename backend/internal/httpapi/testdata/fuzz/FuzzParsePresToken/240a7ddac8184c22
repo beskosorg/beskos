@@ -1,0 +1,2 @@
+go test fuzz v1
+string("c3JjfHRlbmFudC9tZWV0LXNyYy9hY\rmMucHB0eHwxNzg5NTkzOTM0.mcUQISKJrtWq7JOmgQeKDOxMM0tu04A_Awyz415W4v7")

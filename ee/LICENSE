@@ -1,0 +1,32 @@
+Beskos Enterprise License
+
+DRAFT -- pending legal review before publication.
+
+Copyright (c) 2026 Beskos, Lda. All rights reserved.
+
+1. Grant. Subject to the terms below and to a valid, unexpired license key issued by
+   Beskos, Lda. ("Beskos") for your organization, Beskos grants you a non-exclusive,
+   non-transferable, non-sublicensable license to use the software in this directory
+   ("Enterprise Code") together with the Licensed Work defined in ../LICENSE.md, for the
+   number of seats and the duration stated in your license key.
+
+2. Restrictions. You may not:
+   a. use the Enterprise Code without a valid license key, or after your key has expired
+      beyond its stated grace period;
+   b. remove, disable, or circumvent the license-key verification mechanism;
+   c. redistribute the Enterprise Code separately from the Licensed Work;
+   d. use the Enterprise Code to offer a Competing Offering, as defined in ../LICENSE.md,
+      unless your license key explicitly grants that right (a partner or OEM key).
+
+3. Source availability. The Enterprise Code is provided in source form for transparency and
+   audit. Availability of the source does not grant any right to use it beyond what Section 1
+   permits.
+
+4. No warranty. THE ENTERPRISE CODE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+   OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+   PARTICULAR PURPOSE, AND NONINFRINGEMENT.
+
+5. Term. This license terminates automatically if you breach any of its terms, or when your
+   license key expires without renewal (subject to any grace period the key states).
+
+For a commercial license, seats, or renewal: https://beskos.com/licensing

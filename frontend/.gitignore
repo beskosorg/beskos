@@ -1,0 +1,8 @@
+node_modules
+dist
+
+# secrets/local config -- never commit (except the example)
+.env
+.env.local
+.env.*.local
+!.env.example

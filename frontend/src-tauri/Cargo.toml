@@ -1,0 +1,46 @@
+[package]
+name = "beskos"
+version = "0.1.0"
+description = "Beskos — e-mail e workspace"
+authors = ["Beskos"]
+edition = "2021"
+
+# Library shared by the desktop and mobile builds (Tauri 2).
+[lib]
+name = "beskos_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+# devtools is NOT enabled here: Tauri already wires up the inspector automatically in debug
+# (dev) builds. Forcing it on via the feature would also expose the inspector in the distributed
+# release build -- a security risk. To debug a release build one-off, enable "devtools" locally
+# without committing.
+# image-png: decodes the tray icon's PNG at runtime (Image::from_bytes).
+tauri = { version = "2", features = ["tray-icon", "image-png", "devtools"] }
+tauri-plugin-opener = "2"
+tauri-plugin-notification = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+# Native folder picker (to choose where to sync).
+tauri-plugin-dialog = "2"
+# The sync ENGINE, embedded in the app (without the `agent` feature: the app already has its
+# own tray and event loop; we only want the engine).
+beskos-sync = { path = "../../sync-daemon", default-features = false }
+
+# Single instance (desktop): when the OS opens a .vcf with the app already running, forward the
+# file path to the live instance instead of opening a second one. Covers Windows/Linux; on macOS
+# the file arrives via RunEvent::Opened. Cargo does not know tauri-build's cfg(desktop), so we
+# target "not-mobile" explicitly.
+[target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
+tauri-plugin-single-instance = "2"
+
+# OS notification that WAITS for the click (src/notify.rs). The notification plugin does not
+# expose the click on desktop, so we talk to the same layer it uses underneath.
+[target.'cfg(any(windows, target_os = "linux"))'.dependencies]
+notify-rust = "4"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+mac-notification-sys = "0.6"

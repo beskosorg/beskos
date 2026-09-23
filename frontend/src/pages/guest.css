@@ -1,0 +1,29 @@
+/* Public meeting join page (/j/:room) -- a centered card with the organization's branding. */
+.wm .gp{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:32px 16px;background:var(--surface-2);}
+.wm .gp-card{position:relative;width:100%;max-width:440px;background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:34px 30px 22px;display:flex;flex-direction:column;align-items:center;text-align:center;}
+.wm .gp-badge{width:64px;height:64px;border-radius:18px;background:var(--accent-tint);color:var(--accent-ink);display:grid;place-items:center;}
+.wm .gp-logo{height:40px;max-width:200px;object-fit:contain;}
+.wm .gp-org{margin-top:14px;font-size:12.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}
+.wm .gp-title{margin:6px 0 0;font-size:22px;font-weight:700;letter-spacing:-.02em;}
+.wm .gp-sub{margin:8px 0 18px;font-size:13.5px;color:var(--muted);line-height:1.5;}
+.wm .gp-input{width:100%;border:1px solid var(--border);border-radius:11px;padding:12px 14px;font:inherit;font-size:14.5px;background:var(--surface);color:var(--ink);text-align:center;}
+.wm .gp-input:focus{border-color:var(--accent);outline:none;}
+.wm .gp-join{width:100%;margin-top:12px;display:inline-flex;align-items:center;justify-content:center;gap:8px;border:none;border-radius:11px;background:var(--accent);color:#fff;font-weight:650;font-size:14.5px;padding:13px;cursor:pointer;transition:filter .12s;}
+.wm .gp-join:hover:not(:disabled){filter:brightness(1.07);}
+.wm .gp-join:disabled{opacity:.55;cursor:default;}
+.wm .gp-msg{margin:14px 0 4px;font-size:14px;color:var(--ink);line-height:1.5;}
+.wm .gp-waiting{display:flex;flex-direction:column;align-items:center;gap:14px;padding:8px 0;}
+.wm .gp-spin{width:30px;height:30px;border-radius:50%;border:3px solid var(--border);border-top-color:var(--accent);animation:gpspin .8s linear infinite;}
+@keyframes gpspin{to{transform:rotate(360deg)}}
+.wm .gp-signin{margin-top:16px;font-size:12.5px;color:var(--muted);text-decoration:none;}
+.wm .gp-signin:hover{color:var(--accent-ink);text-decoration:underline;}
+.wm .gp-powered{margin-top:22px;font-size:11.5px;color:var(--faint);text-decoration:none;}
+.wm .gp-powered b{font-weight:700;color:var(--muted);}
+.wm .gp-powered:hover b{color:var(--accent-ink);}
+/* The language picker: a select, since there are fourteen languages. Capped in width: a native
+   select sizes itself to its longest option, and "Portugues (Portugal)" pushed it across the card. */
+.wm .gp-lang{position:absolute;top:16px;inset-inline-end:16px;appearance:none;-webkit-appearance:none;max-width:150px;border:none;background:var(--surface-2);color:var(--muted);font:inherit;font-size:11.5px;font-weight:650;padding:5px 12px;border-radius:999px;cursor:pointer;text-overflow:ellipsis;}
+.wm .gp-lang:hover{color:var(--ink);}
+.wm .gp-lang:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+@media (prefers-color-scheme:dark){.wm .gp-logo.white-dark{filter:brightness(0) invert(1);}}
+:root[data-theme="dark"] .wm .gp-logo.white-dark{filter:brightness(0) invert(1);}

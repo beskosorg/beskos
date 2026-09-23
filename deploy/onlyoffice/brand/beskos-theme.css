@@ -1,0 +1,79 @@
+/* ── Beskos palette for the office editor ──────────────────────────────────────
+   Replaces ONLYOFFICE's blue (#446995 and friends) with Beskos's own teal. The
+   tab layout is generic, but color is identity -- and Ascensio System SIA's
+   trademark policy forbids imitating their visual identity.
+
+   Why CSS instead of a theme in themes.json: in Docs 9.4, a custom theme's
+   colors are only written when the user actually SWITCHES theme (apply_theme);
+   at startup the editor applies the theme class but never generates the CSS
+   variables (`write_theme_css` is commented out in parse_themes_object).
+   Result: the theme was accepted and the editor stayed blue anyway. This file
+   is deterministic instead.
+
+   The startup patch appends this block to the END of each editor's app.css,
+   so it wins on source order at equal specificity.
+   ────────────────────────────────────────────────────────────────────────────── */
+
+:root,
+:root .theme-type-light {
+  --toolbar-header-document: #116466;
+  --toolbar-header-spreadsheet: #0C4A4B;
+  --toolbar-header-presentation: #B44D3A;
+  --toolbar-header-pdf: #8E3524;
+  --toolbar-header-visio: #2E7D5B;
+
+  --highlight-toolbar-tab-underline-document: #116466;
+  --highlight-toolbar-tab-underline-spreadsheet: #0C4A4B;
+  --highlight-toolbar-tab-underline-presentation: #B44D3A;
+  --highlight-toolbar-tab-underline-pdf: #8E3524;
+  --highlight-toolbar-tab-underline-visio: #2E7D5B;
+  --highlight-header-tab-underline-document: #116466;
+  --highlight-header-tab-underline-spreadsheet: #0C4A4B;
+  --highlight-header-tab-underline-presentation: #B44D3A;
+  --highlight-header-tab-underline-pdf: #8E3524;
+  --highlight-header-tab-underline-visio: #2E7D5B;
+
+  --text-link: #116466;
+  --text-link-hover: #0C4A4B;
+  --text-link-active: #0C4A4B;
+  --border-control-focus: #116466;
+  --background-accent-button: #116466;
+  --background-primary-dialog-button: #116466;
+  --highlight-primary-dialog-button-hover: #0F5A5B;
+  --highlight-primary-dialog-button-pressed: #0C4A4B;
+  --highlight-button-hover: #E7F1F0;
+  --highlight-button-pressed: #D3E6E4;
+  --highlight-button-pressed-hover: #C4DDDB;
+}
+
+:root .theme-dark,
+:root .theme-type-dark {
+  --toolbar-header-document: #0C4A4B;
+  --toolbar-header-spreadsheet: #17302E;
+  --toolbar-header-presentation: #5E2A1D;
+  --toolbar-header-pdf: #4A2018;
+  --toolbar-header-visio: #1D4A38;
+
+  --highlight-toolbar-tab-underline-document: #2DD4BF;
+  --highlight-toolbar-tab-underline-spreadsheet: #2DD4BF;
+  --highlight-toolbar-tab-underline-presentation: #E0836A;
+  --highlight-toolbar-tab-underline-pdf: #E0836A;
+  --highlight-toolbar-tab-underline-visio: #4ADE80;
+  --highlight-header-tab-underline-document: #2DD4BF;
+  --highlight-header-tab-underline-spreadsheet: #2DD4BF;
+  --highlight-header-tab-underline-presentation: #E0836A;
+  --highlight-header-tab-underline-pdf: #E0836A;
+  --highlight-header-tab-underline-visio: #4ADE80;
+
+  --text-link: #5EEAD4;
+  --text-link-hover: #2DD4BF;
+  --text-link-active: #2DD4BF;
+  --border-control-focus: #2DD4BF;
+  --background-accent-button: #14B8A6;
+  --background-primary-dialog-button: #14B8A6;
+  --highlight-primary-dialog-button-hover: #0F9488;
+  --highlight-primary-dialog-button-pressed: #0C4A4B;
+  --highlight-button-hover: #1B4441;
+  --highlight-button-pressed: #12302E;
+  --highlight-button-pressed-hover: #1B4441;
+}

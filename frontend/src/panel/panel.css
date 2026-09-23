@@ -1,0 +1,477 @@
+/* Admin panel design system — Google Workspace Admin-style layout.
+   Sidebar + content, monochrome icons, modals and drawers. Scoped under .pnl. */
+.pnl {
+  color-scheme: light;
+  --paper:#FAFAFA; --surface:#FFFFFF; --surface-2:#F5F5F5;
+  --ink:#0A0A0A; --muted:#525252; --faint:#8C8C8C;
+  --border:#E5E5E5; --border-strong:#D4D4D4;
+  --accent:#111111; --accent-solid:#111111; --accent-ink:#000000; --accent-tint:#EDEDED;
+  --on-accent:#FFFFFF;
+  --danger:#A61E1E; --ok:#2E7D5B; --warn:#7F5E0B;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.05);
+  --shadow:0 1px 3px rgba(0,0,0,.07),0 4px 16px rgba(0,0,0,.05);
+  --shadow-lg:0 8px 30px rgba(0,0,0,.10);
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  --mono:"SF Mono",ui-monospace,"Roboto Mono",Menlo,monospace;
+  --sidebar:248px;
+  font-family:var(--font); color:var(--ink); font-size:14px; line-height:1.5;
+}
+@media (prefers-color-scheme:dark){.pnl{
+  color-scheme: dark;
+  --paper:#0A0A0A; --surface:#171717; --surface-2:#262626; --ink:#FAFAFA; --muted:#A3A3A3; --faint:#737373;
+  --border:#262626; --border-strong:#404040;
+  --accent:#FAFAFA; --accent-solid:#FAFAFA; --accent-ink:#FFFFFF; --accent-tint:#262626;
+  --on-accent:#0A0A0A;
+  --danger:#A61E1E; --ok:#2E7D5B; --warn:#7F5E0B;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.4); --shadow:0 1px 3px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.35);
+  --shadow-lg:0 10px 44px rgba(0,0,0,.5);
+}}
+/* THE TOGGLE HAS TO WIN OVER THE OPERATING SYSTEM. The webmail's theme switch writes `data-theme`
+   on <html> (webmail/App.tsx), and webmail.css honours it -- this file did not have a single
+   data-theme rule. Choosing light in the app on a dark desktop left the administration console
+   dark, and the reverse; the two halves of the same product disagreed about the theme the user
+   had just chosen. These two blocks are the fix, and they mirror what webmail.css already did. */
+:root[data-theme="dark"] .pnl{
+  color-scheme: dark;
+  --paper:#0A0A0A; --surface:#171717; --surface-2:#262626; --ink:#FAFAFA; --muted:#A3A3A3; --faint:#737373;
+  --border:#262626; --border-strong:#404040;
+  --accent:#FAFAFA; --accent-solid:#FAFAFA; --accent-ink:#FFFFFF; --accent-tint:#262626;
+  --on-accent:#0A0A0A;
+  --danger:#A61E1E; --ok:#2E7D5B; --warn:#7F5E0B;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.4); --shadow:0 1px 3px rgba(0,0,0,.4),0 6px 20px rgba(0,0,0,.35);
+  --shadow-lg:0 10px 44px rgba(0,0,0,.5);
+}
+:root[data-theme="light"] .pnl{
+  color-scheme: light;
+  --paper:#FAFAFA; --surface:#FFFFFF; --surface-2:#F5F5F5;
+  --ink:#0A0A0A; --muted:#525252; --faint:#8C8C8C;
+  --border:#E5E5E5; --border-strong:#D4D4D4;
+  --accent:#111111; --accent-solid:#111111; --accent-ink:#000000; --accent-tint:#EDEDED;
+  --on-accent:#FFFFFF;
+  --danger:#A61E1E; --ok:#2E7D5B; --warn:#7F5E0B;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.05);
+  --shadow:0 1px 3px rgba(0,0,0,.07),0 4px 16px rgba(0,0,0,.05);
+  --shadow-lg:0 8px 30px rgba(0,0,0,.10);
+}
+.pnl *,.pnl *::before,.pnl *::after{box-sizing:border-box;}
+.pnl button{font-family:inherit;cursor:pointer;}
+.pnl a{color:inherit;text-decoration:none;}
+
+.pnl-app{display:grid;grid-template-columns:var(--sidebar) 1fr;min-height:100vh;background:var(--paper);}
+
+/* Sidebar */
+.pnl-side{background:var(--surface);border-inline-end:1px solid var(--border);display:flex;flex-direction:column;position:sticky;top:0;height:100vh;}
+.pnl-brand{display:flex;align-items:center;gap:11px;padding:18px 20px;}
+.pnl-mark{width:32px;height:32px;border-radius:8px;background:var(--accent-solid);display:grid;place-items:center;color:var(--on-accent);font-weight:700;font-size:16px;}
+.pnl-brand b{font-size:16px;letter-spacing:-.01em;}
+.pnl-brand small{display:block;color:var(--faint);font-size:11px;font-weight:500;}
+.pnl-nav{display:flex;flex-direction:column;gap:2px;padding:8px 12px;flex:1;overflow-y:auto;}
+.pnl-nav button{display:flex;align-items:center;gap:13px;padding:9px 12px;border-radius:8px;border:none;background:none;color:var(--muted);font:inherit;font-weight:500;width:100%;text-align:start;}
+.pnl-nav button:hover{background:var(--surface-2);color:var(--ink);}
+.pnl-nav button.on{background:var(--accent-tint);color:var(--accent-ink);font-weight:600;}
+.pnl-nav button.on svg{color:var(--accent);}
+.pnl-nav .sep{height:1px;background:var(--border);margin:8px 6px;}
+.pnl-side-foot{padding:12px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px;}
+.pnl-avatar{width:34px;height:34px;border-radius:50%;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;font-weight:600;font-size:13px;flex:none;}
+.pnl-side-foot .who{flex:1;min-width:0;}
+.pnl-side-foot .who b{display:block;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.pnl-side-foot .who span{font-size:11px;color:var(--faint);}
+.pnl-icon-btn{width:34px;height:34px;border-radius:8px;border:none;background:none;color:var(--muted);display:grid;place-items:center;}
+.pnl-icon-btn:hover{background:var(--surface-2);color:var(--ink);}
+
+/* Content */
+.pnl-main{display:flex;flex-direction:column;min-width:0;}
+.pnl-top{display:flex;align-items:center;gap:16px;padding:22px 32px 6px;}
+.pnl-top h1{margin:0;font-size:22px;font-weight:600;letter-spacing:-.02em;}
+.pnl-top .desc{color:var(--muted);font-size:13px;margin-top:2px;}
+.pnl-top .grow{flex:1;}
+.pnl-content{padding:16px 32px 48px;max-width:1080px;width:100%;}
+
+/* Buttons */
+.pnl-btn{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--border-strong);background:var(--surface);color:var(--ink);border-radius:8px;padding:9px 16px;font-weight:600;font-size:13.5px;}
+.pnl-btn:hover{background:var(--surface-2);}
+.pnl-btn.primary{background:var(--accent-solid);border-color:var(--accent-solid);color:var(--on-accent);}
+.pnl-btn.primary:hover{filter:brightness(1.05);}
+.pnl-btn.ghost{border-color:transparent;background:none;}
+.pnl-btn.danger{color:var(--danger);border-color:transparent;}
+.pnl-btn.danger:hover{background:color-mix(in srgb,var(--danger) 12%,transparent);}
+.pnl-btn:disabled{opacity:.5;}
+
+/* Cards & tables */
+.pnl-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow-sm);}
+.pnl-card + .pnl-card{margin-top:16px;}
+.pnl-card-h{display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid var(--border);}
+.pnl-card-h h3{margin:0;font-size:15px;font-weight:600;}
+.pnl-card-h .grow{flex:1;}
+.pnl-card-b{padding:8px 20px 16px;}
+/* App row (turn on/off): name on the left, switch on the right. */
+.apps-row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:10px 0;border-bottom:1px solid var(--border);font-size:14px;cursor:pointer;}
+.apps-row:last-child{border-bottom:none;}
+.pnl-stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:16px;}
+.pnl-stat{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px 20px;box-shadow:var(--shadow-sm);}
+.pnl-stat .l{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12.5px;font-weight:500;}
+.pnl-stat .v{font-size:30px;font-weight:700;letter-spacing:-.02em;margin-top:8px;font-variant-numeric:tabular-nums;}
+.pnl-stat .d{font-size:12px;color:var(--faint);margin-top:2px;}
+
+.pnl-row{display:flex;align-items:center;gap:12px;padding:12px 4px;border-top:1px solid var(--border);}
+.pnl-row:first-child{border-top:none;}
+.pnl-row .grow{flex:1;min-width:0;}
+.pnl-row .mono{font-family:var(--mono);font-size:13px;}
+.pnl-row .sub{font-size:12px;color:var(--muted);}
+.pnl-empty{padding:28px 8px;text-align:center;color:var(--faint);font-size:13.5px;}
+
+.pnl-pill{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;padding:3px 10px;border-radius:20px;}
+.pnl-pill.ok{background:color-mix(in srgb,var(--ok) 15%,transparent);color:var(--ok);}
+.pnl-pill.warn{background:color-mix(in srgb,var(--warn) 16%,transparent);color:var(--warn);}
+.pnl-pill.muted{background:var(--surface-2);color:var(--muted);}
+
+.pnl-input,.pnl-select{border:1px solid var(--border-strong);border-radius:10px;padding:9px 12px;font:inherit;background:var(--surface);color:var(--ink);outline:none;width:100%;}
+.pnl-input:focus,.pnl-select:focus{border-color:var(--accent);}
+.pnl-field{margin-bottom:14px;}
+.pnl-field label{display:block;font-size:12.5px;font-weight:600;color:var(--muted);margin-bottom:6px;}
+.pnl-err{color:var(--danger);font-size:13px;margin-top:8px;}
+
+/* Bars */
+.pnl-bar{height:8px;border-radius:99px;background:var(--surface-2);overflow:hidden;}
+.pnl-bar > i{display:block;height:100%;background:var(--accent);}
+.pnl-bar.over > i{background:var(--warn);}
+
+/* Modal */
+.pnl-modal-bg{position:fixed;inset:0;background:rgba(20,22,24,.45);display:flex;align-items:center;justify-content:center;padding:24px;z-index:100;}
+.pnl-modal{width:460px;max-width:100%;background:var(--surface);border-radius:16px;box-shadow:var(--shadow-lg);overflow:hidden;animation:pnl-pop .16s ease;}
+.pnl-modal-h{display:flex;align-items:center;gap:10px;padding:18px 20px;font-size:16px;font-weight:600;}
+.pnl-modal-h .grow{flex:1;}
+.pnl-modal-b{padding:0 20px 8px;}
+.pnl-modal-f{display:flex;justify-content:flex-end;gap:10px;padding:16px 20px;}
+@keyframes pnl-pop{from{opacity:0;transform:translateY(8px) scale(.98);}to{opacity:1;transform:none;}}
+
+/* Drawer (sidecar) */
+.pnl-drawer-bg{position:fixed;inset:0;background:rgba(20,22,24,.45);display:flex;justify-content:flex-end;z-index:100;}
+.pnl-drawer{width:440px;max-width:100%;background:var(--surface);height:100%;box-shadow:var(--shadow-lg);display:flex;flex-direction:column;animation:pnl-slide .2s ease;}
+.pnl-drawer-h{display:flex;align-items:center;gap:10px;padding:18px 22px;border-bottom:1px solid var(--border);font-size:16px;font-weight:600;}
+.pnl-drawer-h .grow{flex:1;}
+.pnl-drawer-b{padding:20px 22px;overflow-y:auto;flex:1;}
+@keyframes pnl-slide{from{transform:translateX(24px);opacity:.5;}to{transform:none;opacity:1;}}
+
+/* Toast */
+.pnl-toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(16px);background:var(--ink);color:var(--paper);padding:11px 18px;border-radius:11px;font-size:13.5px;font-weight:500;opacity:0;pointer-events:none;transition:.25s;z-index:120;display:flex;align-items:center;gap:9px;}
+.pnl-toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+.pnl-code-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;font-family:var(--mono);font-size:13px;background:var(--surface-2);border-radius:10px;padding:12px;}
+
+@media (max-width:820px){
+  .pnl-app{grid-template-columns:1fr;}
+  .pnl-side{position:fixed;z-index:50;transform:translateX(-100%);transition:transform .2s;width:var(--sidebar);}
+  .pnl-content,.pnl-top{padding-inline-start:20px;padding-inline-end:20px;}
+}
+
+/* Appearance (branding): color swatches + logo preview */
+.brand-swatches{display:flex;flex-wrap:wrap;gap:10px;margin:4px 0 6px;}
+.brand-swatch{width:36px;height:36px;border-radius:9px;border:2px solid transparent;cursor:pointer;display:grid;place-items:center;color:#fff;font-weight:700;box-shadow:0 0 0 1px rgba(0,0,0,.06) inset;}
+.brand-swatch.on{border-color:var(--ink);}
+.brand-swatch.none{background:var(--surface-2);color:var(--faint);}
+.brand-logo-row{display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:6px;}
+.brand-logo-preview{height:56px;min-width:120px;padding:8px 14px;border:1px dashed var(--border-strong);border-radius:10px;display:grid;place-items:center;background:var(--surface-2);}
+.brand-logo-preview img{max-height:40px;max-width:180px;object-fit:contain;}
+
+/* An assistant agent's tools: a grid of boxes. Each one is a real capability —
+   what's checked is what the agent can actually do (§3.2 of the assistant's design). */
+.agent-tools{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px 16px;margin-top:6px;}
+/* Each tool is a <label> INSIDE .pnl-field, and `.pnl-field label` (line 98) imposes
+   display:block/bold/gray/margin. We override it here with enough specificity for the layout to
+   go back to being a flex row: switch + label side by side, centered. */
+.agent-tools .agent-tool{display:flex;align-items:center;gap:11px;margin:0;font-size:13px;font-weight:400;line-height:1.2;color:var(--ink);cursor:pointer;}
+/* Pins the switch to the small FORM size (34×20), regardless of which base rule for .switch wins
+   the cascade, and gives it breathing room from the label. */
+.wm .agent-tools .agent-tool > .switch{width:34px;height:20px;flex:none;background:transparent;}
+.wm .agent-tools .agent-tool > .switch > .track{border-radius:20px;}
+.wm .agent-tools .agent-tool > .switch > .track::before{width:14px;height:14px;top:3px;inset-inline-start:3px;}
+.wm .agent-tools .agent-tool > .switch > input:checked + .track::before{transform:translateX(14px);}
+.agent-tools .agent-tool > span:last-child{flex:1;min-width:0;}
+/* Warning next to the assistant's master switch (general agent). Short and on the right, so it
+   doesn't push the switch or compete with the agent's name. */
+.agent-master-hint{max-width:230px;text-align:end;font-size:11.5px;line-height:1.25;}
+
+/* Assistant memory: add by hand + list. */
+.mem-add{display:flex;gap:8px;}
+.mem-add .pnl-input{flex:1;}
+
+/* Audit log on the assistant screen. */
+.mem-audit{display:flex;flex-direction:column;gap:3px;padding:6px 0;}
+.mem-audit .sub{font-size:11px;}
+
+/* Appearance: logo preview in both themes + action bar. */
+.brand-logo-duo{display:flex;gap:10px;flex-wrap:wrap;}
+.brand-logo-preview{position:relative;}
+.brand-logo-preview .tag{position:absolute;bottom:4px;inset-inline-end:8px;font-size:10px;color:var(--faint);}
+.brand-logo-preview.light{background:#FFFFFF;border-color:#E5E5E5;}
+.brand-logo-preview.dark{background:#171717;border-color:#404040;}
+.brand-logo-preview.dark .desc{color:#A3A3A3;}
+.brand-actions{display:flex;justify-content:flex-end;margin-top:16px;}
+
+/* Plan comparison table (manager's catalog) */
+.plans-scroll{overflow-x:auto;}
+.plans-table{width:100%;border-collapse:collapse;font-size:13px;min-width:560px;}
+.plans-table th,.plans-table td{padding:10px 14px;text-align:center;border-bottom:1px solid var(--border);}
+.plans-table thead th{vertical-align:top;padding-top:16px;}
+.plans-table .pt-feat{text-align:start;color:var(--muted);font-weight:500;white-space:nowrap;}
+.plans-table .pt-name{font-size:14px;font-weight:700;}
+.plans-table .pt-price{font-size:21px;font-weight:700;margin-top:3px;}
+.plans-table .pt-per{font-size:11px;color:var(--muted);}
+.plans-table td.cur,.plans-table th.cur{background:color-mix(in srgb,var(--accent) 6%,transparent);}
+.plans-table th.cur{box-shadow:inset 0 3px 0 var(--accent);}
+.plans-table tr.strong td{font-weight:650;}
+.plans-table .pt-actions td{padding:14px;border-bottom:none;}
+.pnl-note{margin-top:4px;padding:9px 12px;border-radius:10px;font-size:12.5px;line-height:1.5;background:color-mix(in srgb,var(--accent) 8%,transparent);border:1px solid color-mix(in srgb,var(--accent) 25%,transparent);color:var(--ink);}
+
+/* Per-member permissions: a list of capabilities with their state (from role / granted / revoked). */
+.perm-list{display:flex;flex-direction:column;gap:2px;max-height:52vh;overflow-y:auto;}
+.perm-row{display:flex;align-items:flex-start;gap:10px;padding:8px 6px;border-radius:8px;cursor:pointer;}
+.perm-row:hover{background:var(--surface-2);}
+.perm-row.off{opacity:.5;cursor:not-allowed;}
+.perm-row input{margin-top:2px;}
+.perm-tx{display:flex;flex-direction:column;gap:1px;min-width:0;}
+.perm-nm{font-size:14px;}
+.perm-sub{font-size:12px;color:var(--muted);}
+
+/* DNS: summary bar + per-record status. A published value that diverges appears below the
+   expected one, so the difference is visible without leaving the page. */
+.dns-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:10px 0 6px;}
+.dns-bar .grow{flex:1;}
+.dns-sum{font-size:12.5px;color:var(--muted);}
+.dns-sum.ok{color:#1a7f37;}
+.dns-sum.warn{color:#b42318;}
+.dns-pill{display:inline-block;padding:1px 8px;border-radius:999px;font-size:11px;white-space:nowrap;}
+.dns-pill.ok{background:rgba(26,127,55,.14);color:#1a7f37;}
+.dns-pill.warn{background:rgba(180,120,0,.16);color:#9a6700;}
+.dns-pill.err{background:rgba(180,35,24,.14);color:#b42318;}
+.dns-val{max-width:420px;overflow-x:auto;}
+.dns-found{margin-top:2px;font-size:11px;color:#b42318;max-width:420px;overflow-x:auto;}
+
+/* Create alias: a single row — name, @, domain, receiving mailbox. The fields have their own
+   width because .pnl-input/.pnl-select are width:100% and, in a row, each one would stretch to
+   fill the whole screen. */
+.alias-new{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:10px 0 14px;}
+.alias-at{color:var(--muted);}
+/* Consecutive cards on the same page breathe apart from each other (the users list and the aliases list). */
+.pnl-content > .pnl-card + .pnl-card{margin-top:16px;}
+
+/* ---- Domain page (used to be a sidecar; the information didn't fit there) ---- */
+/* The domain page uses the whole screen: the DNS table has 6 columns and long values, and the
+   1080px cap on the other pages left it cramped with half the monitor unused. */
+.dom-page{display:flex;flex-direction:column;gap:16px;max-width:none;}
+.dom-summary{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding-top:16px;}
+.dom-summary .grow{flex:1;}
+.dom-danger{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.pnl-card.danger{border-color:color-mix(in srgb,#b42318 35%,var(--border));}
+.pnl-btn.danger{color:#b42318;}
+/* Records table: a page has room for the value to breathe; anything large scrolls inside its own
+   cell instead of pushing the table wider (that was what broke the "Copy" column into vertical letters). */
+.dns-table{width:100%;border-collapse:collapse;font-size:12.5px;}
+.dns-table th{text-align:start;font-weight:600;color:var(--muted);font-size:11.5px;padding:8px 10px;border-bottom:1px solid var(--border);white-space:nowrap;}
+.dns-table td{padding:10px;border-bottom:1px solid var(--border);vertical-align:top;}
+.dns-table tr:last-child td{border-bottom:0;}
+.dns-table td:last-child{text-align:end;white-space:nowrap;}
+.dns-table .dns-val{max-width:min(52vw,760px);overflow-x:auto;white-space:nowrap;}
+/* Scrolls inside the card: in a narrow window the table never pushes the page sideways. */
+.dns-scroll{overflow-x:auto;}
+/* Diverging: both rows labeled — what should be there and what's actually published. */
+.dns-diff{display:flex;flex-direction:column;gap:4px;}
+.dns-diff-row{display:flex;gap:8px;align-items:baseline;}
+.dns-diff-row.bad .dns-val{color:#b42318;}
+.dns-lbl{flex:none;min-width:96px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.03em;}
+/* Per-provider guide: a collapsed list; opens whatever's relevant. */
+.guide-item{border-bottom:1px solid var(--border);}
+.guide-item:last-of-type{border-bottom:0;}
+.guide-head{display:flex;align-items:center;gap:8px;width:100%;padding:11px 2px;background:none;border:0;
+  color:var(--ink);font:inherit;cursor:pointer;text-align:start;}
+.guide-head .chev-open{transform:rotate(180deg);}
+/* The guide is text: on a wide page it's capped to a readable line length, otherwise the lines
+   would stretch across the monitor. It's the table that needs the full width, not the prose. */
+.guide-body{padding:0 2px 14px 24px;max-width:760px;}
+.guide-body ol{margin:0 0 12px;padding-inline-start:18px;display:flex;flex-direction:column;gap:6px;color:var(--muted);font-size:13px;line-height:1.5;}
+
+/* DNS table on a narrow screen: each record turns into a block with labels, instead of six
+   squeezed columns (that was what made "Copy" come out in vertical letters). */
+@media (max-width:900px){
+  .dns-table,.dns-table tbody,.dns-table tr,.dns-table td{display:block;width:100%;}
+  .dns-table thead{display:none;}
+  .dns-table tr{border:1px solid var(--border);border-radius:12px;padding:10px 12px;margin-bottom:10px;}
+  .dns-table tr:last-child{margin-bottom:0;}
+  .dns-table td{border:0;padding:4px 0;display:flex;gap:10px;align-items:baseline;text-align:start;}
+  .dns-table td::before{content:attr(data-label);flex:none;min-width:64px;color:var(--muted);
+    font-size:10.5px;text-transform:uppercase;letter-spacing:.03em;}
+  .dns-table td.dns-copy{justify-content:flex-end;}
+  .dns-table td.dns-copy::before{content:none;}
+  .dns-table .dns-val{max-width:100%;white-space:normal;word-break:break-all;}
+  .dns-diff-row{flex-direction:column;gap:2px;}
+  .dns-lbl{min-width:0;}
+}
+
+/* ===== Subscription wizard (plan → customer → address → financial → summary) ===== */
+.sub-wrap{display:flex;flex-direction:column;gap:18px;padding:22px 26px 32px;max-width:1120px;}
+.sub-head{display:flex;flex-direction:column;gap:12px;align-items:flex-start;}
+.sub-head .sub-title h1{margin:0;font-size:24px;letter-spacing:-.02em;}
+.sub-head .sub-title p{margin:4px 0 0;}
+/* Steps: numbered, done ones checked, the current one highlighted. The line connects them like a path. */
+.sub-steps{display:flex;list-style:none;margin:0;padding:0;gap:0;flex-wrap:wrap;}
+.sub-steps li{flex:1;min-width:120px;position:relative;}
+.sub-steps li+li::before{content:"";position:absolute;inset-inline-start:0;top:19px;width:100%;height:2px;background:var(--border);z-index:0;}
+.sub-steps li.done+li::before,.sub-steps li.on::before{background:var(--accent-solid);}
+.sub-steps button{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:7px;width:100%;background:none;border:none;padding:8px 4px;color:var(--muted);font:inherit;font-size:12.5px;cursor:pointer;}
+.sub-steps button:disabled{cursor:default;}
+.sub-steps .n{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;border:2px solid var(--border);background:var(--surface);font-weight:700;font-size:12.5px;}
+.sub-steps li.on .n{border-color:var(--accent-solid);color:var(--accent-solid);}
+.sub-steps li.done .n{border-color:var(--accent-solid);background:var(--accent-solid);color:var(--on-accent);}
+.sub-steps li.on .lb{color:var(--ink);font-weight:600;}
+.sub-body{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:20px;align-items:start;}
+.sub-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px 22px;display:flex;flex-direction:column;gap:14px;}
+.sub-card h2{display:flex;align-items:center;gap:9px;margin:0;font-size:16px;}
+/* Monthly/yearly: two buttons in one block, the chosen one filled in. */
+.sub-cycle{display:inline-flex;align-self:flex-start;padding:3px;background:var(--surface-2);border-radius:11px;gap:3px;}
+.sub-cycle button{display:inline-flex;align-items:center;gap:7px;border:none;background:none;color:var(--muted);border-radius:9px;padding:8px 16px;font:inherit;font-weight:600;font-size:13.5px;cursor:pointer;}
+.sub-cycle button.on{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.12);}
+.sub-cycle em{font-style:normal;font-size:11px;font-weight:700;color:var(--on-accent);background:var(--accent-solid);border-radius:20px;padding:2px 7px;}
+.sub-plans{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;}
+.sub-plan{display:flex;flex-direction:column;gap:3px;text-align:start;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:14px;cursor:pointer;font:inherit;}
+.sub-plan:hover{border-color:var(--border-strong);}
+.sub-plan.on{border-color:var(--accent-solid);box-shadow:0 0 0 3px var(--accent-tint);}
+.sub-plan.off{opacity:.5;cursor:not-allowed;}
+.sub-plan .pn{font-weight:700;font-size:14.5px;color:var(--ink);display:flex;align-items:center;gap:6px;}
+.sub-plan .pn .cur{font-style:normal;font-size:10.5px;font-weight:700;color:var(--accent-ink);background:var(--accent-tint);border-radius:20px;padding:2px 7px;}
+.sub-plan .pp{font-size:20px;font-weight:700;color:var(--ink);letter-spacing:-.02em;}
+.sub-plan .pu,.sub-plan .pd{font-size:11.5px;color:var(--muted);}
+.sub-plan .pd.err{color:var(--danger);}
+/* Company vs individual: two cards, one of them selected. */
+.sub-kind{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.sub-kind button{display:flex;flex-direction:column;gap:4px;text-align:start;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:14px;font:inherit;cursor:pointer;}
+.sub-kind button.on{border-color:var(--accent-solid);box-shadow:0 0 0 3px var(--accent-tint);}
+.sub-kind b{font-size:14.5px;color:var(--ink);}
+.sub-kind span{font-size:12px;color:var(--muted);}
+.sub-fld{display:flex;flex-direction:column;gap:6px;}
+.sub-fld>span{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--ink);}
+.sub-fld .opt{font-style:normal;font-weight:500;font-size:11.5px;color:var(--faint);}
+.sub-fld .hint{font-style:normal;font-size:11.5px;color:var(--muted);}
+.sub-fld input,.sub-fld select{height:40px;padding:0 12px;border:1px solid var(--border-strong);border-radius:10px;background:var(--surface);color:var(--ink);font:inherit;font-size:14px;outline:none;}
+.sub-fld input:focus,.sub-fld select:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-tint);}
+.sub-row{display:grid;grid-template-columns:1fr 2fr;gap:12px;}
+.sub-note{margin:0;padding:10px 12px;background:var(--accent-tint);color:var(--accent-ink);border-radius:10px;font-size:12.5px;}
+.sub-review{display:flex;flex-direction:column;gap:10px;margin:0;}
+.sub-review div{display:flex;gap:12px;align-items:baseline;}
+.sub-review dt{min-width:120px;font-size:12.5px;color:var(--muted);}
+.sub-review dd{margin:0;font-size:13.5px;color:var(--ink);}
+.sub-err{margin:0;}
+.sub-nav{display:flex;align-items:center;gap:10px;}
+.sub-nav .grow{flex:1;}
+/* Summary: stays stuck to the top while scrolling through the form. */
+.sub-sum{position:sticky;top:14px;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:9px;}
+.sub-sum h3{margin:0 0 4px;font-size:14px;}
+.sub-sum .sub-line{display:flex;justify-content:space-between;gap:10px;font-size:13.5px;color:var(--ink);}
+.sub-sum .sub-line.sm{font-size:11.5px;color:var(--muted);margin-top:-6px;}
+.sub-sum .sub-line.total{border-top:1px solid var(--border);padding-top:9px;margin-top:3px;font-size:16px;}
+.sub-sum .sub-line.total b{font-size:18px;letter-spacing:-.02em;}
+.sub-fine{margin:0;font-size:11.5px;color:var(--faint);line-height:1.45;}
+.sub-fine.ok{color:var(--accent-ink);}
+.sub-fine.warn{color:var(--danger);}
+@media (max-width:900px){
+  .sub-body{grid-template-columns:1fr;}
+  .sub-sum{position:static;}
+  .sub-kind,.sub-row{grid-template-columns:1fr;}
+  .sub-steps .lb{display:none;}
+  .sub-steps li{min-width:0;}
+}
+
+/* Mailbox lifecycle. The `danger` pill was missing: `warn` means "look at this", and a deleted
+   mailbox is not a warning -- it is a state with a deadline. */
+.pnl-pill.danger{background:color-mix(in srgb,var(--danger) 15%,transparent);color:var(--danger);}
+.pnl-icon-btn.danger:hover{background:color-mix(in srgb,var(--danger) 12%,transparent);color:var(--danger);}
+/* The delete confirmation is a line, not a field: the sentence is the point and the box merely
+   accompanies it -- hence not .pnl-field, whose label is block, bold and grey. */
+.mbx-confirm{display:flex;align-items:flex-start;gap:9px;margin-top:14px;font-size:13px;line-height:1.35;cursor:pointer;}
+.mbx-confirm input{margin-top:2px;flex:none;}
+
+/* Bringing a mailbox in from the previous provider (MigrationSection).
+   The folder list is the screen's real content: it is the promise the migration is making, and it
+   is read before anything is copied, so it gets a monospaced count column that lines up. */
+.mig-form{padding-top:14px;}
+.mig-check{display:flex;align-items:center;gap:9px;margin:4px 0 14px;font-size:13px;cursor:pointer;}
+.mig-actions{display:flex;gap:10px;margin-top:6px;}
+
+
+.mig-found h3.mig-skip-h{margin-top:20px;color:var(--muted);}
+.mig-folders{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;}
+.mig-folders li{display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.mig-folders li:last-child{border-bottom:none;}
+.mig-folders .name{font-weight:500;}
+.mig-folders .arrow,.mig-folders .dest{color:var(--muted);}
+/* The count is pushed right and tabular so forty rows of numbers can be scanned as a column. */
+.mig-folders .count{margin-inline-start:auto;font-variant-numeric:tabular-nums;color:var(--muted);}
+/* Why a folder is NOT copied is a sentence, not a badge: "virtual" explains nothing to the person
+   counting their folders, and that person is the one who decides whether we lost their mail. */
+.mig-folders .why{margin-inline-start:auto;max-width:32rem;text-align:end;color:var(--muted);font-size:12px;line-height:1.4;}
+.mig-folders.skipped .name{color:var(--muted);}
+.mig-folders.live li.done .name{color:var(--muted);}
+
+
+.mig-src{font-size:12.5px;color:var(--muted);}
+.mig-state{margin-top:8px;font-size:13px;color:var(--muted);}
+.mig-bar{height:7px;border-radius:99px;background:var(--surface-2);overflow:hidden;margin:10px 0 8px;}
+.mig-bar span{display:block;height:100%;background:var(--accent-solid);transition:width .5s ease;}
+.mig-counts{font-size:13px;color:var(--muted);}
+.mig-counts b{color:var(--ink);font-variant-numeric:tabular-nums;}
+.mig-counts .warn{color:var(--danger);}
+.mig-progress .mig-folders{margin-top:14px;}
+.mig-progress .pnl-btn{margin-top:14px;}
+
+
+.mig-last.bad{border-color:color-mix(in srgb,var(--danger) 40%,var(--border));}
+.pnl-card-h .when{font-size:12px;font-weight:400;color:var(--faint);}
+@media (max-width:700px){
+  .mig-folders li{flex-wrap:wrap;}
+  .mig-folders .why{margin-inline-start:0;text-align:start;max-width:none;}
+}
+
+/* Provider picker, notices and live progress for the import (MigrationSection).
+   The providers are buttons rather than a <select>: on a phone a native select hides the list
+   behind a tap, and this list is the answer to "what do I even put here". */
+.mig-providers{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:2px;}
+.mig-prov{border:1px solid var(--border-strong);background:var(--surface);color:var(--ink);border-radius:999px;padding:6px 13px;font-size:13px;font-weight:500;}
+.mig-prov:hover{background:var(--surface-2);}
+.mig-prov.on{background:var(--accent-solid);border-color:var(--accent-solid);color:var(--on-accent);}
+/* The notice sits ABOVE the password field and is not a .pnl-note: a note is background colour, and
+   "this provider will refuse your password" is not background. `hard` is the one that will not work
+   at all today, so it reads as a stop rather than as advice. */
+.mig-notice{margin:0 0 14px;padding:10px 13px;border-radius:10px;font-size:12.5px;line-height:1.5;
+  background:color-mix(in srgb,var(--accent) 10%,transparent);
+  border:1px solid color-mix(in srgb,var(--accent) 30%,transparent);color:var(--ink);}
+.mig-notice.hard{background:color-mix(in srgb,var(--danger) 10%,transparent);
+  border-color:color-mix(in srgb,var(--danger) 35%,transparent);}
+
+/* Before the source has been counted there is no percentage to show, so the bar sweeps instead of
+   sitting at zero -- a bar pinned at 0% reads as broken, not as counting. */
+.mig-bar.unknown span{width:35%;animation:mig-sweep 1.4s ease-in-out infinite;}
+@keyframes mig-sweep{0%{margin-inline-start:-35%;}100%{margin-inline-start:100%;}}
+.mig-folders .fstate{margin-inline-start:auto;font-size:12px;color:var(--muted);}
+.mig-folders .fstate + .count{margin-inline-start:14px;}
+.mig-folders li.running .name{font-weight:600;}
+
+/* Importing from a file the customer has on disk (MigrationFileForm).
+   The two sources are tabs rather than a dropdown: one of them is the answer for people whose old
+   mail is on no server at all, and a hidden option is one nobody discovers. */
+.mig-sources{display:flex;gap:6px;margin-bottom:14px;}
+.mig-src-tab{border:1px solid var(--border-strong);background:var(--surface);color:var(--muted);border-radius:10px;padding:8px 16px;font-size:13.5px;font-weight:600;}
+.mig-src-tab:hover{background:var(--surface-2);}
+.mig-src-tab.on{background:var(--surface-2);color:var(--ink);border-color:var(--accent-solid);}
+/* Drop target. Dashed while empty, solid once it holds something: the border is the whole feedback
+   that a dragged file was actually caught. */
+.mig-drop{display:flex;align-items:center;gap:10px;margin:10px 0 4px;padding:22px 18px;cursor:pointer;
+  border:1.5px dashed var(--border-strong);border-radius:12px;color:var(--muted);font-size:13.5px;}
+.mig-drop:hover,.mig-drop.over{border-color:var(--accent-solid);background:color-mix(in srgb,var(--accent) 6%,transparent);}
+.mig-drop.has{border-style:solid;color:var(--ink);}
+.mig-drop b{font-weight:600;}
+.mig-drop .size{margin-inline-start:auto;font-variant-numeric:tabular-nums;color:var(--muted);}
+/* Where the file lives, per program. Collapsed, because it is only needed once and by the people
+   who do not already know -- and expanded it would push the button off the screen. */
+.mig-where{margin-top:12px;font-size:12.5px;color:var(--muted);}
+.mig-where summary{cursor:pointer;font-weight:600;color:var(--ink);}
+.mig-where p{margin:8px 0 0;line-height:1.55;}

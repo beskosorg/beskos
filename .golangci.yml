@@ -1,0 +1,13 @@
+version: "2"
+
+# Beskos runs golangci-lint's standard set -- see .github/workflows/ci.yml, which splits it into
+# a blocking pass (govet, ineffassign, staticcheck, unused) and a report-only one (errcheck): a
+# deferred or best-effort Close()/Remove() has nothing actionable to do with its error, and law
+# 2.2's "handle or propagate" is about errors that carry information the caller needs -- most of
+# errcheck's ~47 findings as of 2026-09-16 are exactly that class, not real bugs.
+linters:
+  enable:
+    - errcheck
+    - ineffassign
+    - staticcheck
+    - unused

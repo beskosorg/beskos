@@ -1,0 +1,4 @@
+# Historical finding, not present in HEAD. The key in question must be rotated in
+# the Stripe dashboard; the public repository starts from a new history and never
+# carries this commit.
+794ad3d14981515713543be1d0061deadc288726:deploy/.env.example:stripe-access-token:37

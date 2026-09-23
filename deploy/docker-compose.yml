@@ -1,0 +1,276 @@
+# Reference deployment for the Community edition: the email engine (official Stalwart image,
+# unmodified), Postgres, object storage, the control plane, and the optional apps (office
+# editing, video meetings). Nothing here talks to a Beskos-operated service -- this is meant to
+# run entirely on your own infrastructure. Copy deploy/.env.example to deploy/.env first.
+#
+# This file omits the operator console for Beskos's own hosted service, which lives in a
+# private repository; it has no purpose in a self-hosted instance.
+name: beskos
+
+services:
+  stalwart:
+    # Pinned version (not :latest) -- Stalwart is pre-1.0 and changes wire formats between
+    # releases; bump this deliberately and re-test.
+    image: stalwartlabs/stalwart:v0.16.4
+    container_name: beskos-stalwart
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      # Management/JMAP stays on localhost -- the webmail reaches it through the API's
+      # same-origin proxy. Never expose it on a LAN or the public internet: Stalwart admin
+      # credentials travel over this port.
+      - "127.0.0.1:8080:8080"   # HTTP: JMAP + webadmin
+      - "25:25"                 # SMTP (public: receives mail)
+      - "587:587"               # Submission (public)
+      - "465:465"               # SMTPS (public)
+      - "143:143"               # IMAP (public)
+      - "993:993"               # IMAPS (public)
+    volumes:
+      - stalwart_data:/opt/stalwart
+      - ./stalwart/config.json:/etc/stalwart/config.json:ro
+    environment:
+      # Recovery admin -- only the Go backend uses it, never the frontend.
+      STALWART_RECOVERY_ADMIN: "admin:${STALWART_ADMIN_SECRET}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8080/healthz/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  postgres:
+    # Postgres 16 + pgvector (the wiki's semantic search / RAG).
+    image: pgvector/pgvector:pg16
+    container_name: beskos-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    # No host port published: only the api/worker containers reach Postgres, over the internal
+    # Docker network. Use `docker exec beskos-postgres psql ...` to inspect it directly.
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # Creates the separate database Stalwart's own config.json expects (see the script for
+      # why) -- runs once, only against an empty data volume.
+      - ./postgres-initdb:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  minio:
+    # S3-compatible object storage for uploaded files. Any S3-compatible service works in
+    # production (see MINIO_ENDPOINT in docs/configuration.md) -- this is the self-contained
+    # default for getting started.
+    # quay.io, not Docker Hub: minio/minio stopped being pullable from docker.io
+    # ("pull access denied ... repository does not exist"). Same image, same digest.
+    image: quay.io/minio/minio@sha256:14cea493d9a34af32f524e538b8346cf79f3321eff8e708c1e2960462bd8936e
+    container_name: beskos-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: ../backend
+    container_name: beskos-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_started
+      redis:
+        condition: service_started
+    ports:
+      - "127.0.0.1:8000:8000"   # behind the frontend's dev proxy or a reverse proxy in production
+    environment: &control_env
+      HTTP_ADDR: ":8000"
+      DATABASE_URL: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable"
+      REDIS_URL: "redis://redis:6379"
+      STALWART_URL: "http://stalwart:8080"
+      STALWART_ADMIN_ID: "admin"
+      STALWART_ADMIN_SECRET: "${STALWART_ADMIN_SECRET}"
+      STALWART_HOSTNAME: "${STALWART_HOSTNAME:-mail.localhost}"
+      STALWART_DEFAULT_DOMAIN: "${STALWART_DEFAULT_DOMAIN:-localhost}"
+      # Object storage. Defaults to the MinIO container beside it; set these to point at an
+      # S3-compatible service instead, which is what an installation that already has one does.
+      MINIO_ENDPOINT: "${MINIO_ENDPOINT:-minio:9000}"
+      MINIO_ACCESS_KEY: "${MINIO_ACCESS_KEY:-${MINIO_ROOT_USER}}"
+      MINIO_SECRET_KEY: "${MINIO_SECRET_KEY:-${MINIO_ROOT_PASSWORD}}"
+      MINIO_BUCKET: "${MINIO_BUCKET:-beskos}"
+      MINIO_REGION: "${MINIO_REGION:-}"
+      MINIO_SSL: "${MINIO_SSL:-false}"
+      # Envelope encryption for stored files. The code reads this and, without it, writes and
+      # serves in the clear -- and cannot read anything an encrypted instance wrote. It was absent
+      # from this file, so setting it in the environment had no effect at all.
+      FILE_ENC_KEYS: "${FILE_ENC_KEYS:-}"
+      EMBEDDINGS_DIMENSIONS: "${EMBEDDINGS_DIMENSIONS:-}"
+      BRAND_NAME: "${BRAND_NAME:-Beskos}"
+      BRAND_URL: "${BRAND_URL:-}"
+      SALES_EMAIL: "${SALES_EMAIL:-}"
+      # Any endpoint speaking the OpenAI-compatible chat API. AI_PROVIDER is a label, and a
+      # preset when it is a known name; AI_BASE_URL is what points this anywhere else and was
+      # absent here, so setting it had no effect at all.
+      AI_PROVIDER: "${AI_PROVIDER:-deepseek}"
+      AI_BASE_URL: "${AI_BASE_URL:-}"
+      AI_REASONING: "${AI_REASONING:-}"
+      AI_API_KEY: "${AI_API_KEY:-}"
+      AI_MODEL: "${AI_MODEL:-}"
+      # Outbound mail for account/security notifications; submit through Stalwart itself on 465
+      # (implicit TLS) -- Stalwart's own 587 listener closes the connection immediately, so that
+      # port does not work here. INSECURE only makes sense with a self-signed cert in dev.
+      NOTIFY_SMTP_HOST: "${NOTIFY_SMTP_HOST:-}"
+      NOTIFY_SMTP_PORT: "${NOTIFY_SMTP_PORT:-465}"
+      NOTIFY_SMTP_USER: "${NOTIFY_SMTP_USER:-}"
+      NOTIFY_SMTP_PASSWORD: "${NOTIFY_SMTP_PASSWORD:-}"
+      NOTIFY_FROM: "${NOTIFY_FROM:-}"
+      NOTIFY_SMTP_INSECURE: "${NOTIFY_SMTP_INSECURE:-false}"
+      # Wiki semantic search (OpenAI-compatible embeddings). Unset -> semantic search is off,
+      # everything else keeps working.
+      EMBEDDINGS_API_KEY: "${EMBEDDINGS_API_KEY:-}"
+      EMBEDDINGS_BASE_URL: "${EMBEDDINGS_BASE_URL:-}"
+      EMBEDDINGS_MODEL: "${EMBEDDINGS_MODEL:-text-embedding-3-small}"
+      SMS_PROVIDER: "${SMS_PROVIDER:-log}"
+      SNS_REGION: "${SNS_REGION:-}"
+      SMS_SENDER_ID: "${SMS_SENDER_ID:-}"
+      AWS_ACCESS_KEY_ID: "${AWS_ACCESS_KEY_ID:-}"
+      AWS_SECRET_ACCESS_KEY: "${AWS_SECRET_ACCESS_KEY:-}"
+      PROVISION_SKIP_DNS_VERIFY: "${PROVISION_SKIP_DNS_VERIFY:-false}"
+      # Office editing (OnlyOffice Document Server). ONLYOFFICE_URL is what the BROWSER uses;
+      # FILES_HOST_URL is how the Document Server reaches this API back (download/callback).
+      ONLYOFFICE_URL: "${ONLYOFFICE_URL:-http://localhost:8082}"
+      ONLYOFFICE_INTERNAL_URL: "http://onlyoffice"
+      FILES_HOST_URL: "http://api:8000"
+      ONLYOFFICE_JWT_SECRET: "${ONLYOFFICE_JWT_SECRET:-dev-oo-jwt-secret-change-me}"
+      # Required in APP_ENV=production: the AGPL v3 §13 offer of this image's modified source.
+      # Point it at your own fork if you changed anything under deploy/onlyoffice/.
+      ONLYOFFICE_SOURCE_URL: "${ONLYOFFICE_SOURCE_URL:-}"
+      DOC_TOKEN_SECRET: "${DOC_TOKEN_SECRET:-dev-doc-token-secret-change-me}"
+      # Meet (LiveKit). LIVEKIT_URL is the WebSocket the BROWSER uses; the API key/secret sign
+      # room tokens and must match deploy/livekit/livekit.yaml.
+      LIVEKIT_URL: "${LIVEKIT_URL:-ws://localhost:7880}"
+      LIVEKIT_HTTP_URL: "http://livekit:7880"
+      LIVEKIT_API_KEY: "${LIVEKIT_API_KEY:-devkey}"
+      LIVEKIT_API_SECRET: "${LIVEKIT_API_SECRET:-devsecret_livekit_change_me_0123456789}"
+      VAPID_PUBLIC_KEY: "${VAPID_PUBLIC_KEY:-}"
+      VAPID_PRIVATE_KEY: "${VAPID_PRIVATE_KEY:-}"
+      VAPID_SUBJECT: "${VAPID_SUBJECT:-mailto:admin@localhost}"
+      FILES_MAX_UPLOAD_BYTES: "${FILES_MAX_UPLOAD_BYTES:-107374182400}"
+      APP_ORIGINS: "${APP_ORIGINS:-}"
+      COOKIE_SECURE: "${COOKIE_SECURE:-false}"
+      PUBLIC_URL: "${PUBLIC_URL:-}"
+      APP_ENV: "${APP_ENV:-development}"
+      # Encrypts the stored JMAP credential and TOTP secret at rest; required in production.
+      MFA_ENC_KEY: "${MFA_ENC_KEY:-}"
+      # A Pro license key, if you have one -- see docs/editions.md. Unset = Community.
+      EDITION_LICENSE_KEY: "${EDITION_LICENSE_KEY:-}"
+      EDITION_PUBLIC_KEY: "${EDITION_PUBLIC_KEY:-}"
+    healthcheck:
+      # readyz, not healthz: only reports healthy once Postgres also answers, so nothing routes
+      # traffic here before the database is up.
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/readyz"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  worker:
+    build: ../backend
+    container_name: beskos-worker
+    restart: unless-stopped
+    command: ["/usr/local/bin/worker"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      # Waits for api, not just postgres: api is what applies the migrations, and it only answers
+      # /readyz once they are done. Starting alongside it means every scan loop here queries tables
+      # that do not exist yet, and a first `docker compose up` opens with a screen of
+      # "relation ... does not exist" errors that fix themselves a tick later.
+      api:
+        condition: service_healthy
+    environment: *control_env
+
+  # OnlyOffice Document Server -- office editing (docx/xlsx/pptx). Runs the official image,
+  # modified at startup by two of our scripts (AI proxy wiring + optional branding); Stalwart, by
+  # contrast, is never modified. The modification is AGPL-permitted and the image offers its
+  # source back per §13 -- see ONLYOFFICE_SOURCE_URL above. JWT_SECRET must match the api
+  # service's ONLYOFFICE_JWT_SECRET.
+  onlyoffice:
+    image: onlyoffice/documentserver@sha256:e3da62a847b9a5d51a11f73cfea1d9c13c3be3809614490d4edddcf01dcf919b
+    container_name: beskos-onlyoffice
+    restart: unless-stopped
+    entrypoint: ["/bin/sh", "/scripts/onlyoffice-ai-init.sh"]
+    environment:
+      JWT_ENABLED: "true"
+      JWT_SECRET: "${ONLYOFFICE_JWT_SECRET:-dev-oo-jwt-secret-change-me}"
+      JWT_HEADER: "Authorization"
+      AI_PROXY_URL: "${AI_PROXY_URL:-http://api:8000}"
+    volumes:
+      - ./onlyoffice/onlyoffice-ai-init.sh:/scripts/onlyoffice-ai-init.sh:ro
+      - ./onlyoffice/onlyoffice-branding-patch.sh:/scripts/onlyoffice-branding-patch.sh:ro
+      - ./onlyoffice/brand:/scripts/brand:ro
+    ports:
+      - "127.0.0.1:8082:80"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost/healthcheck"]
+      interval: 20s
+      timeout: 5s
+      retries: 15
+
+  # LiveKit -- the video-call SFU behind Meet. Official image, network-only, unmodified.
+  livekit:
+    image: livekit/livekit-server@sha256:483b8b7b5b0654f91f1e8bdc7b46fcd37fd9911612ecf627f97e3185a89825bd
+    container_name: beskos-livekit
+    restart: unless-stopped
+    command: ["--config", "/etc/livekit.yaml"]
+    volumes:
+      - ./livekit/livekit.yaml:/etc/livekit.yaml:ro
+    ports:
+      - "7880:7880"   # signaling (WebSocket)
+      - "7881:7881"   # TCP fallback
+      - "7882:7882/udp"   # media
+
+  # Valkey -- coordinates LiveKit and Egress (meeting recording). A same-protocol, permissively
+  # licensed fork of Redis.
+  redis:
+    image: valkey/valkey@sha256:d2e18f3410b6f616de1417f570fa55261af2898b9c5b2cfb6781ce2373ea43d1
+    container_name: beskos-redis
+    restart: unless-stopped
+
+  # LiveKit Egress -- records a meeting (a headless Chrome composites the room) and uploads the
+  # result to object storage. Official image, unmodified; needs SYS_ADMIN and a large /dev/shm
+  # for Chrome.
+  egress:
+    image: livekit/egress@sha256:980ff439431df2c773573721ab6da19e15bdc1f049ab7cb80e87470bf174c12f
+    container_name: beskos-egress
+    restart: unless-stopped
+    # Shares LiveKit's network namespace so 127.0.0.1 reaches LiveKit's RTC and its Chrome
+    # receives the meeting's media; Redis/MinIO are still reachable over the shared network.
+    network_mode: "service:livekit"
+    environment:
+      EGRESS_CONFIG_FILE: /etc/egress.yaml
+    volumes:
+      - ./livekit/egress.yaml:/etc/egress.yaml:ro
+    cap_add:
+      - SYS_ADMIN
+    shm_size: "1gb"
+    depends_on:
+      - redis
+      - livekit
+
+volumes:
+  stalwart_data:
+  postgres_data:
+  minio_data:

@@ -1,0 +1,14 @@
+# Secret scanning configuration. Runs in CI and before every public export.
+title = "beskos"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Fixtures used by tests and e2e scripts; not credentials."
+regexes = [
+  '''correct-horse-battery(-staple)?-9273''',
+  '''GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ''',
+  '''sk_test_or_live_key_here''',
+  '''whsec_test''',
+]

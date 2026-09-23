@@ -1,0 +1,42 @@
+{
+	# A certificate is issued only for a hostname our API vouches for. Without this, anybody could
+	# point a DNS record at this address and have us mint certificates on their behalf until the
+	# issuance rate limits lock us out for everyone.
+	# The ask endpoint IS the rate control in this version of Caddy: the old interval/burst options
+	# were removed, and a hostname nobody vouches for never reaches issuance at all.
+	on_demand_tls {
+		ask http://srv-captain--api:8000/api/public/mta-sts-allowed
+	}
+	email postmaster@beskos.com
+}
+
+:443 {
+	tls {
+		on_demand
+		# TLS-ALPN only: HTTP-01 would need port 80, which is not ours to take on this cluster.
+		issuer acme {
+			disable_http_challenge
+		}
+	}
+
+	# ONE POLICY SERVES EVERY CUSTOMER: a customer points their MX at mail.beskos.com, so their
+	# policy names the same host ours does. That is what makes this a single small service rather
+	# than a file per domain.
+	handle /.well-known/mta-sts.txt {
+		header Content-Type "text/plain; charset=utf-8"
+		rewrite * /mta-sts.txt
+		file_server {
+			root /srv
+		}
+	}
+
+	# Nothing else is served here. A host that answers other paths invites somebody to point
+	# something at it later.
+	handle {
+		respond 404
+	}
+}
+
+# NO PORT 80. CapRover's nginx already claims it on the leader, and this does not need it: the
+# certificate challenge is TLS-ALPN, which runs on 443, and senders fetch the policy over HTTPS by
+# definition. One port less is also one less thing reachable on a host that only serves four lines.

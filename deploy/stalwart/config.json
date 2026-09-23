@@ -1,0 +1,8 @@
+{
+  "@type": "PostgreSql",
+  "host": "postgres",
+  "port": 5432,
+  "database": "stalwart",
+  "authUsername": "beskos",
+  "authSecret": { "@type": "EnvironmentVariable", "variableName": "POSTGRES_PASSWORD" }
+}

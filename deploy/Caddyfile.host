@@ -1,0 +1,67 @@
+# beskos.com, one machine.
+#
+# Everything the browser reaches goes through here. The rule that matters is the same one the
+# sample Caddyfile states: /jmap, /auth and /.well-known reach OUR Go API, never Stalwart
+# directly, because the API is what turns a webmail session into a Stalwart credential. Those
+# routes are already handled inside the `app` container's nginx, so this file only has to hand it
+# the whole host.
+#
+# Stalwart keeps its own Let's Encrypt certificate for the SMTP and IMAP ports, obtained before
+# this machine existed and carried over in the restored registry. Caddy owns 80 and 443 here, so
+# Stalwart cannot renew that certificate by itself -- see the note in the deployment log.
+
+{
+	email postmaster@beskos.com
+}
+
+# The public site.
+beskos.com, www.beskos.com {
+	encode gzip
+	reverse_proxy landing:3000
+}
+
+# The product: webmail, panel, and the API behind them on the same origin.
+app.beskos.com {
+	encode gzip
+	reverse_proxy app:80
+}
+
+# Mail clients look here for autoconfiguration, which the API answers under /.well-known.
+mail.beskos.com {
+	encode gzip
+	reverse_proxy app:80
+}
+
+# The API's own name, kept because clients and the desktop application may still hold it.
+api.beskos.com {
+	encode gzip
+	reverse_proxy app:80
+}
+
+# Office editing (OnlyOffice Document Server). The browser loads the editor from here.
+docs.beskos.com {
+	encode gzip
+	reverse_proxy onlyoffice:80
+}
+
+# Meetings: LiveKit's signalling WebSocket. Media travels directly over UDP 7882, not through here.
+meet.beskos.com {
+	reverse_proxy livekit:7880
+}
+
+# MTA-STS. The policy is published at mode `enforce`, so a sender that has it cached refuses to
+# deliver over anything but TLS to mail.beskos.com. Serving it from here keeps the policy
+# refreshable instead of merely surviving in other people's caches.
+mta-sts.beskos.com {
+	handle /.well-known/mta-sts.txt {
+		header Content-Type "text/plain; charset=utf-8"
+		respond "version: STSv1
+mode: enforce
+mx: mail.beskos.com
+max_age: 604800
+" 200
+	}
+	handle {
+		respond 404
+	}
+}

@@ -1,0 +1,53 @@
+version: "2"
+sql:
+  - engine: "postgresql"
+    schema: "internal/db/migrations"
+    queries: "db/queries"
+    gen:
+      go:
+        package: "db"
+        out: "internal/db"
+        sql_package: "pgx/v5"
+        emit_json_tags: true
+        emit_pointers_for_null_types: true
+        overrides:
+          - db_type: "uuid"
+            go_type: "github.com/google/uuid.UUID"
+          - db_type: "timestamptz"
+            go_type: "time.Time"
+          # notification args go out as raw JSON (not base64) in the response; the frontend translates.
+          - column: "notifications.args"
+            go_type: "encoding/json.RawMessage"
+          # tool call arguments: raw JSON, for the audit screen to read.
+          - column: "assistant_tool_calls.args"
+            go_type: "encoding/json.RawMessage"
+          # action cards from a reply: raw JSON, returned as-is to the frontend.
+          - column: "assistant_messages.steps"
+            go_type: "encoding/json.RawMessage"
+          - column: "assistant_tasks.steps"
+            go_type: "encoding/json.RawMessage"
+          # exact arguments of the action awaiting approval: raw JSON, shown as-is.
+          - column: "assistant_pending_actions.args"
+            go_type: "encoding/json.RawMessage"
+          # contact custom fields: raw JSON (not base64) in the response.
+          - column: "contacts.custom_fields"
+            go_type: "encoding/json.RawMessage"
+          # wiki body_json: raw JSON in the response (not base64!) — the editor receives the block
+          # array as-is; []byte would serialize to base64 and the frontend would fall back to plain text.
+          - column: "wiki_pages.body_json"
+            go_type: "encoding/json.RawMessage"
+          # Notes: same block format as the wiki, same reason -- raw JSON in the response, never
+          # base64, or the editor would receive text and fall back to plain rendering.
+          - column: "notes.body_json"
+            go_type: "encoding/json.RawMessage"
+          - column: "wiki_page_versions.body_json"
+            go_type: "encoding/json.RawMessage"
+          - column: "wiki_home.body_json"
+            go_type: "encoding/json.RawMessage"
+          - column: "wiki_comments.body_json"
+            go_type: "encoding/json.RawMessage"
+          # pgvector: Go passes/receives the textual literal "[0.1,0.2,...]" and SQL casts to ::vector.
+          - db_type: "vector"
+            go_type: "string"
+          - column: "wiki_chunks.embedding"
+            go_type: "string"
